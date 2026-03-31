@@ -1,0 +1,17 @@
+# 高機能な縁取りフィルタプラグイン Border_S
+
+次のフィルタが追加されます:
+- 縁取りσ
+- 角丸めσ
+- アウトラインσ
+
+公開ページ:
+https://github.com/sigma-axis/aviutl2_Border_S
+
+紹介動画:
+https://www.nicovideo.jp/watch/sm46116909
+
+お願い:
+ニコニコ動画での親作品登録をしていただけると励みになります．
+作品 ID: sm46116909
+
