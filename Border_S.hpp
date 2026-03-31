@@ -16,7 +16,7 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 // name and version of plugin.
 ////////////////////////////////
 #define PLUGIN_NAME		L"Border_S"
-#define PLUGIN_VERSION	"v1.00-beta10"
+#define PLUGIN_VERSION	"v1.00 (for beta39)"
 #define PLUGIN_AUTHOR	"sigma-axis"
 
 #define PLUGIN_INFO_FMT(name, ver, author)	(name " " ver " by " author)
