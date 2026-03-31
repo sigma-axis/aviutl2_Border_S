@@ -43,7 +43,7 @@ jobs:
     - name: Set package version
       run: |
         cd .\assets
-        (Get-Content .\package.ini -Raw) -replace '${ver}', '${{ github.ref_name }}' | Set-Content .\package.ini
+        (Get-Content .\package.ini -Raw) -replace '\${ver}', '${{ github.ref_name }}' | Set-Content .\package.ini
 
     - name: Pack into a folder
       run: |
