@@ -10,7 +10,7 @@
 
 [ダウンロードはこちら．](https://github.com/sigma-axis/aviutl2_Border_S/releases) [紹介動画](https://www.nicovideo.jp/watch/sm46116909)
 
-TODO: images here.
+<img width="1080" height="880" alt="Border_S で追加されるフィルタのデモ一覧" src="https://github.com/user-attachments/assets/c8229415-35be-4454-ae10-4aef9c6bfdc7" />
 
 ##  お願い
 
@@ -48,7 +48,7 @@ Although, usage documentations for this script in languages other than Japanese 
 
 オブジェクトの不透明ピクセルの境界に縁取りを追加します．標準の「縁取り」に比べて柔軟な設定ができ，高速です．
 
-TODO: image.
+<img width="500" height="240" alt="縁取りσ での外側/内側縁取りの例" src="https://github.com/user-attachments/assets/e9466201-d6ea-4f51-ba96-855f7604ed3e" />
 
 ### サイズ
 
@@ -76,13 +76,11 @@ TODO: image.
 
 | 方式 | サンプル | α調整 | 説明 |
 |:---:|:---:|:---:|:---|
-| `2値化` |  | アルファ値のしきい値を指定 | アルファ値で2値化して計算します．<ul><li>最も高速なアルゴリズム．</li><li>縁取りの境界がジャギーになる．</li></ul> |
-| `2値化倍精度` |  | アルファ値のしきい値を指定 | `2値化` に簡易的なアンチエイリアスを適用したものです．<ul><li>`2値化` とほとんど差のない速度．</li></ul> |
-| `2値化スムーズ` |  | アルファ値のしきい値を指定 | アルファ値で2値化するが，滑らかな境界を設定します．<ul><li>`2値化倍精度` と比べて動作が遅く，特に「サイズ」が大きい場合に顕著．</li></ul> |
-| `総和` |  | 縁取り境界のアンチエイリアス幅を調整 | 周辺ピクセルのアルファ値の総和から算出します．<ul><li>しきい値で2値化しないため滑らかな境界に．</li><li>尖った部分の縁取りが小さくなる傾向がある．</li><li>`2値化スムーズ` よりやや遅い．</li></ul> |
-| `最大値` |  | 無視されます | 周辺ピクセルのアルファ値の最大値を探します．<ul><li>元画像の境界部分のアルファ値が，そのまま縁取りの境界に現れる．<ul><li>元画像の境界が滑らかなら滑らかに．</li><li>元画像の境界がジャギーならジャギーに．</li></ul></li><li>`総和` よりやや遅い．</li></ul> |
-
-TODO: images.
+| `2値化` | <img width="300" height="240" alt="2値化での結果の例" src="https://github.com/user-attachments/assets/56460022-1a52-4c3e-8509-ca22ed1ebbb9" /> | アルファ値のしきい値を指定 | アルファ値で2値化して計算します．<ul><li>最も高速なアルゴリズム．</li><li>縁取りの境界がジャギーになる．</li></ul> |
+| `2値化倍精度` | <img width="300" height="240" alt="2値化倍精度での結果の例" src="https://github.com/user-attachments/assets/5ec1ac87-3cf5-43aa-86ce-6a64b3d789cf" /> | アルファ値のしきい値を指定 | `2値化` に簡易的なアンチエイリアスを適用したものです．<ul><li>`2値化` とほとんど差のない速度．</li></ul> |
+| `2値化スムーズ` | <img width="300" height="240" alt="2値化スムーズでの結果の例" src="https://github.com/user-attachments/assets/d43ba1b4-44bf-4a0d-a505-93e3bbad438b" /> | アルファ値のしきい値を指定 | アルファ値で2値化するが，滑らかな境界を設定します．<ul><li>`2値化倍精度` と比べて動作が遅く，特に「サイズ」が大きい場合に顕著．</li></ul> |
+| `総和` | <img width="300" height="240" alt="総和での結果の例" src="https://github.com/user-attachments/assets/e050c3cf-5cfa-4958-bced-4c9a1b2be5d5" /> | 縁取り境界のアンチエイリアス幅を調整 | 周辺ピクセルのアルファ値の総和から算出します．<ul><li>しきい値で2値化しないため滑らかな境界に．</li><li>尖った部分の縁取りが小さくなる傾向がある．</li><li>`2値化スムーズ` よりやや遅い．</li></ul> |
+| `最大値` | <img width="300" height="240" alt="最大値での結果の例" src="https://github.com/user-attachments/assets/23fd51ad-109f-4b84-981a-df4d10f54eea" /> | 無視されます | 周辺ピクセルのアルファ値の最大値を探します．<ul><li>元画像の境界部分のアルファ値が，そのまま縁取りの境界に現れる．<ul><li>元画像の境界が滑らかなら滑らかに．</li><li>元画像の境界がジャギーならジャギーに．</li></ul></li><li>`総和` よりやや遅い．</li></ul> |
 
 初期値は `2値化スムーズ`.
 
@@ -123,7 +121,7 @@ TODO: images.
 
 縁取りに縦横比を持たせて，楕円形の縁取りを作ることができます．
 
-TODO: image.
+<img width="320" height="160" alt="縦横比を変えた縁取りの例" src="https://github.com/user-attachments/assets/a2ad45ad-1253-48ee-8cc7-f629aea9264c" />
 
 % 単位で指定，0 で真円，正の値で縦長の楕円形，負の値で横長の楕円形になります．
 
@@ -145,7 +143,7 @@ TODO: image.
 
 縁取りの輪郭を[スーパー楕円](https://ja.wikipedia.org/wiki/%E3%82%B9%E3%83%BC%E3%83%91%E3%83%BC%E6%A5%A4%E5%86%86)にするためのパラメータです．この値が大きいほど，輪郭が四角形に近づきます．
 
-TODO: image.
+<img width="320" height="160" alt="スーパー楕円を利用した縁取りの例" src="https://github.com/user-attachments/assets/4e2c7702-9e4b-423e-b00f-f31ea7b8d899" />
 
 ここでの指定値が % 単位で $p'$ だとすると，スーパー楕円の指数 $p$ は以下のように計算されます:
 
@@ -167,7 +165,7 @@ $$ p = \frac{3 + p'}{3 - p'}. $$
 
 オブジェクトの不透明ピクセルの境界に沿って，角を丸めたり縁部分を削ることができます．
 
-TODO: image.
+<img width="440" height="340" alt="文字への角丸めや画像のふちを縮小した例" src="https://github.com/user-attachments/assets/4cbfd78c-cd93-4278-a22f-d77adde4fcae" />
 
 ### 半径
 
@@ -245,7 +243,7 @@ TODO: image.
 
 「縁取りσ」がオブジェクトの装飾目的なのに対して，「アウトラインσ」はオブジェクトの輪郭に沿った別オブジェクトを作成することを目的としていて，ギャップの空いた縁取りや，元画像の内側に沿ってラインを引いたりと，多様な装飾ができます．
 
-TODO: image.
+<img width="440" height="220" alt="ギャップのある縁取りや内側に引いたラインの例" src="https://github.com/user-attachments/assets/a4ffcfe3-f85d-4fd9-a5d4-b48b3b2d2f42" />
 
 ### 距離
 
@@ -302,7 +300,7 @@ TODO: image.
 | `背面` |  | ラインを元画像の背面に配置します． |
 | `前面` |  | ラインを元画像の前面に配置します． |
 
-TODO: images.
+<img width="440" height="240" alt="ライン配置の表示例" src="https://github.com/user-attachments/assets/22da9e3c-6375-4b8e-ad2f-6502baa0e05b" />
 
 初期値は `背面`.
 
@@ -354,7 +352,7 @@ TODO: images.
 
 ラインの線幅に縦横比を持たせて，楕円のラインを描くことができます．縦横に平たいラインになります．
 
-TODO: image.
+<img width="360" height="180" alt="縦横に偏りを持たせたラインの例" src="https://github.com/user-attachments/assets/0d3c3a83-1b7d-41b3-b751-b1da007742d5" />
 
 % 単位で指定，0 で真円，正の値で縦長の楕円形，負の値で横長の楕円形になります．
 
