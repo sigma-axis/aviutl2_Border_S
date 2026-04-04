@@ -17,7 +17,6 @@
       <UseStandardPreprocessor>true</UseStandardPreprocessor>
       <WarningLevel>Level3</WarningLevel>
       <ConformanceMode>true</ConformanceMode>
-      <DisableSpecificWarnings>26454;</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <EnableUAC>false</EnableUAC>

@@ -13,6 +13,7 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 #include <cstdint>
 #include <array>
 #include <cmath>
+#include <bit>
 
 #include "finalizing.hpp"
 
@@ -332,13 +333,18 @@ void common::buff_spec::prepare_arc(double radius_x, double radius_y, double sup
 	D3D::cxt->ClearState();
 }
 
+constexpr uint32_t bit_ceil_0(uint32_t x)
+{
+	return x == 0 ? 0 : std::bit_ceil(x);
+}
+
 uint32_t common::buff_spec::stride_mid(int width_src, int height_src, int width_dst, int height_dst)
 {
 	static_assert(D3D::buffer_stride_align % elem_size_mid == 0);
 	constexpr uint32_t unit_align = D3D::buffer_stride_align / elem_size_mid;
 
 	uint32_t const width = static_cast<uint32_t>(width_src);
-	return (width + (unit_align - 1)) & (0u - unit_align);
+	return (width & (~unit_align + 1)) + bit_ceil_0(width & (unit_align - 1));
 }
 
 void common::buff_spec::get_size_mid(int width_src, int height_src, int width_dst, int height_dst, uint32_t& length)

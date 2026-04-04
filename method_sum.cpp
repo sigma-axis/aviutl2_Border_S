@@ -13,6 +13,7 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 #include <cstdint>
 #include <array>
 #include <cmath>
+#include <bit>
 
 #include "finalizing.hpp"
 
@@ -490,6 +491,11 @@ void prepare_arc(double radius_x, double radius_y, double superellipse_exp, uint
 	D3D::cxt->ClearState();
 }
 
+constexpr uint32_t bit_ceil_0(uint32_t x)
+{
+	return x == 0 ? 0 : std::bit_ceil(x);
+}
+
 uint32_t stride_mid(double radius_x, double radius_y,
 	int width_dst, int height_dst, int offset_x, int offset_y)
 {
@@ -499,11 +505,11 @@ uint32_t stride_mid(double radius_x, double radius_y,
 	};
 	static_assert(sizeof(one) == sum::buff_spec::elem_size_mid);
 	static_assert(D3D::buffer_stride_align % sizeof(one) == 0);
-	constexpr int32_t unit_align = D3D::buffer_stride_align / sizeof(one);
+	constexpr uint32_t unit_align = D3D::buffer_stride_align / sizeof(one);
 
 	auto const half_size_disk_x = static_cast<int>(std::floor(radius_x));
 	uint32_t const width = static_cast<uint32_t>(width_dst + std::min(2 * half_size_disk_x, half_size_disk_x - offset_x));
-	return (width + (unit_align - 1)) & (-unit_align);
+	return (width & (~unit_align + 1)) + bit_ceil_0(width & (unit_align - 1));
 }
 ANON_NS_E;
 
