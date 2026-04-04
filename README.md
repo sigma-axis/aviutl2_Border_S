@@ -37,12 +37,12 @@
 
 「フィルタ効果の追加」メニューの「Border_S」以下に「縁取りσ」「角丸めσ」「アウトラインσ」が追加されます．
 
-### For non-Japanese speaking users (only AviUtl2)
+### For non-Japanese speaking users
 
-You may be able to find language translation file for this script from [this repository](https://github.com/sigma-axis/aviutl2_translations_sigma-axis). 
-Translation files enable names and parameters of the scripts / filters to be displayed in other languages.
+You may be able to find language translation file for this script / plugin from [this repository](https://github.com/sigma-axis/aviutl2_translations_sigma-axis). 
+Translation files enable names, parameters and commands of the scripts / plugins to be displayed in other languages.
 
-Although, usage documentations for this script in languages other than Japanese are not available now.
+Although, usage documentations for this script / plugin in languages other than Japanese are not available now.
 
 ##  縁取りσ
 
