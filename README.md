@@ -39,7 +39,8 @@
 
 ### For non-Japanese speaking users
 
-You may be able to find language translation file for this script / plugin from [this repository](https://github.com/sigma-axis/aviutl2_translations_sigma-axis). 
+You may be able to find language translation file for this script / plugin from [this repository](https://github.com/sigma-axis/aviutl2_translations_sigma-axis).
+
 Translation files enable names, parameters and commands of the scripts / plugins to be displayed in other languages.
 
 Although, usage documentations for this script / plugin in languages other than Japanese are not available now.
@@ -392,6 +393,10 @@ $$ p = \frac{3 + p'}{3 - p'}. $$
 1.  標準の「縁取り」にあるような，パターン画像などの適用は現在できません．
 
 ##  改版履歴
+
+- **v1.01 (for beta39)** (2026-??-??)
+
+  - 一部処理の最適化．
 
 - **v1.00 (for beta39)** (2026-03-31)
 
