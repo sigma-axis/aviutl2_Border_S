@@ -237,6 +237,8 @@ D3D::ComPtr<::ID3D11ShaderResourceView> common::sequential_inf_def(
 				if (i < inf_def_num - 1) {
 					ofs2_x = static_cast<int>(std::ceil(aspect_x * r)) + ofs1_x;
 					ofs2_y = static_cast<int>(std::ceil(aspect_y * r)) + ofs1_y;
+					D3D::clamp_extension_2d(ofs2_x, width_src);
+					D3D::clamp_extension_2d(ofs2_y, height_src);
 					w2 = width_src + 2 * ofs2_x;
 					h2 = height_src + 2 * ofs2_y;
 				}
@@ -363,6 +365,8 @@ D3D::ComPtr<::ID3D11ShaderResourceView> common::sequential_inf_def(
 				if (i < inf_def_num - 1) {
 					ofs2_x = static_cast<int>(std::ceil(aspect_x * r)) + ofs1_x;
 					ofs2_y = static_cast<int>(std::ceil(aspect_y * r)) + ofs1_y;
+					D3D::clamp_extension_2d(ofs2_x, width_src);
+					D3D::clamp_extension_2d(ofs2_y, height_src);
 					w2 = width_src + 2 * ofs2_x;
 					h2 = height_src + 2 * ofs2_y;
 				}
@@ -449,6 +453,8 @@ D3D::ComPtr<::ID3D11ShaderResourceView> common::sequential_inf_def(
 				if (i < inf_def_num - 1) {
 					ofs2_x = static_cast<int>(std::ceil(aspect_x * r)) + ofs1_x;
 					ofs2_y = static_cast<int>(std::ceil(aspect_y * r)) + ofs1_y;
+					D3D::clamp_extension_2d(ofs2_x, width_src);
+					D3D::clamp_extension_2d(ofs2_y, height_src);
 					w2 = width_src + 2 * ofs2_x;
 					h2 = height_src + 2 * ofs2_y;
 				}
