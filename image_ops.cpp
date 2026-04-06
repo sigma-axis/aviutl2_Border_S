@@ -159,7 +159,7 @@ void csmain(uint2 id : SV_DispatchThreadID)
 
 	const uint2 pos_src = id - uint2(offset);
 	const float a = all(pos_src < size_src) ? src[pos_src] : 0;
-	dst[id] *= lerp(alpha.x, alpha.y, a);
+	dst[id] *= lerp(alpha[0], alpha[1], a);
 }
 )";
 constexpr char cs_src_carve_1[] = R"(
@@ -178,7 +178,7 @@ void csmain(uint2 id : SV_DispatchThreadID)
 
 	const uint2 pos_src = id - uint2(offset);
 	const float a = all(pos_src < size_src) ? src[pos_src] : 0;
-	dst[id] *= lerp(alpha.x, alpha.y, a);
+	dst[id] *= lerp(alpha[0], alpha[1], a);
 }
 )";
 struct cs_cbuff_carve {
