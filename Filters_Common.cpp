@@ -299,7 +299,7 @@ D3D::ComPtr<::ID3D11ShaderResourceView> common::sequential_inf_def(
 
 			// apply inflation and deflation sequentially.
 			int ofs1_x = 0, ofs1_y = 0;
-			double thresh = std::min<double>(a_param, D3D::max_f16_lt_1);
+			double thresh = std::clamp<double>(a_param, D3D::min_f16_gt_0, D3D::max_f16_lt_1);
 			for (int i = 0; i < inf_def_num; i++) {
 				auto const& r = inf_def_seq[i];
 				auto const R = std::abs(r), Rx = aspect_x * R, Ry = aspect_y * R,

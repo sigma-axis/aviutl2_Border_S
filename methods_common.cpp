@@ -52,7 +52,7 @@ void csmain(uint2 id : SV_DispatchThreadID)
 		for (int y = min(0, range_src_y[0]); y < size_mid.y; y++, dist++) {
 			const float alpha = (range_src_y[0] <= y && y < range_src_y[1]) ?
 				src[uint2(id.x, y - range_src_y[0])] : 0;
-			if (abs(alpha - alpha_base) > thresh)
+			if (abs(alpha - alpha_base) > abs(thresh - alpha_base))
 				dist = 0;
 			if (y >= 0) mid[id.x + stride_mid * uint(y)].x = dist;
 		}
@@ -61,7 +61,7 @@ void csmain(uint2 id : SV_DispatchThreadID)
 		for (int y = max(size_mid.y, range_src_y[1]); --y >= 0; dist++) {
 			const float alpha = (range_src_y[0] <= y && y < range_src_y[1]) ?
 				src[uint2(id.x, y - range_src_y[0])] : 0;
-			if (abs(alpha - alpha_base) > thresh)
+			if (abs(alpha - alpha_base) > abs(thresh - alpha_base))
 				dist = 0;
 			if (y < size_mid.y) mid[id.x + stride_mid * uint(y)].y = dist;
 		}
