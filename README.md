@@ -155,9 +155,9 @@ $$ p = \frac{3 + p'}{3 - p'}. $$
 | 膨らみ | 図形 |
 |:---:| :---: |
 | `-300` | 十字 |
-| `-60` | [アステロイド](https://ja.wikipedia.org/wiki/%E3%82%A2%E3%82%B9%E3%83%86%E3%83%AD%E3%82%A4%E3%83%89) |
+| `-60` | [アステロイド](https://ja.wikipedia.org/wiki/%E3%82%A2%E3%82%B9%E3%83%86%E3%83%AD%E3%82%A4%E3%83%89_(%E6%9B%B2%E7%B7%9A)) |
 | `0` | [菱形](https://ja.wikipedia.org/wiki/%E8%8F%B1%E5%BD%A2) |
-| `100` | [楕円](https://ja.wikipedia.org/wiki/%E6%A5%96%E5%86%86) |
+| `100` | [楕円](https://ja.wikipedia.org/wiki/%E6%A5%95%E5%86%86) |
 | `300` | 長方形 |
 
 最小値は -300, 最大値は 300, 初期値は 100.
