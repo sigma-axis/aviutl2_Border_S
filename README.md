@@ -132,7 +132,7 @@ Although, usage documentations for this script / plugin in languages other than 
 
 縁取り凸部分の最低保証の曲率半径です．この値が大きいほど，凸部分が緩やかになります．
 
-![凸半径あるなしの比較例](https://github.com/user-attachments/assets/2fc8646c-d413-4f92-87f2-48a6996b973f)
+![凸半径あるなしの比較例](https://github.com/user-attachments/assets/4b6507f7-af44-4f59-b248-a92322201023)
 
 最小値は 0, 最大値は 500, 初期値は 0.
 
@@ -140,7 +140,7 @@ Although, usage documentations for this script / plugin in languages other than 
 
 縁取り凹部分の最低保証の曲率半径です．この値が大きいほど，凹部分が緩やかになります．
 
-![凹半径あるなしの比較例](https://github.com/user-attachments/assets/2949f891-e49e-4a8b-9b98-a7e749d47bcc)
+![凹半径あるなしの比較例](https://github.com/user-attachments/assets/d08325f7-0e70-4112-b51a-93ad92f74fc7)
 
 最小値は 0, 最大値は 500, 初期値は 0.
 
