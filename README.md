@@ -25,7 +25,7 @@
 
   http://spring-fragrance.mints.ne.jp/aviutl
 
-  - `beta40a` で動作確認済み．
+  - `beta41a` で動作確認済み．
 
 - Visual C++ 再頒布可能パッケージ (v14 の x64 版が必要)
 
