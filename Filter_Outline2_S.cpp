@@ -165,7 +165,7 @@ bool filter_core(
 		size_ti = std::max(static_cast<int>(std::ceil(d_aspect_y * distance + l_aspect_y * std::max(line, 0.0) - move_y)), 0),
 		size_ri = std::max(static_cast<int>(std::ceil(d_aspect_x * distance + l_aspect_x * std::max(line, 0.0) + move_x)), 0),
 		size_bi = std::max(static_cast<int>(std::ceil(d_aspect_y * distance + l_aspect_y * std::max(line, 0.0) + move_y)), 0);
-	D3D::clamp_extension_2d(size_li, size_ti, width_src);
+	D3D::clamp_extension_2d(size_li, size_ri, width_src);
 	D3D::clamp_extension_2d(size_ti, size_bi, height_src);
 	int const width_dst = width_src + size_li + size_ri, height_dst = height_src + size_ti + size_bi;
 
