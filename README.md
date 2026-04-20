@@ -149,6 +149,7 @@ Although, usage documentations for this script / plugin in languages other than 
 縁取りの輪郭を[スーパー楕円](https://ja.wikipedia.org/wiki/%E3%82%B9%E3%83%BC%E3%83%91%E3%83%BC%E6%A5%A4%E5%86%86)にするためのパラメータです．この値が大きいほど，輪郭が四角形に近づきます．
 
 ![スーパー楕円を利用した縁取りの例](https://github.com/user-attachments/assets/4e2c7702-9e4b-423e-b00f-f31ea7b8d899)
+
 ここでの指定値が % 単位で $p'$ だとすると，スーパー楕円の指数 $p$ は以下のように計算されます:
 
 $$ p = \frac{3 + p'}{3 - p'}. $$
@@ -394,8 +395,6 @@ $$ p = \frac{3 + p'}{3 - p'}. $$
 ##  既知の問題
 
 1.  標準の「縁取り」にあるような，パターン画像などの適用は現在できません．
-
-1.  Lua スクリプトの `obj.effect()` 経由で適用した場合，省略したパラメタの値がデフォルト値ではなく直前に適用した値になる挙動を確認しています (AviUtl ExEdit2 beta40a で確認).
 
 ##  改版履歴
 
