@@ -206,7 +206,7 @@ bool filter_core(
 			width_src, height_src,
 			-size_li, -size_ti,
 			srv_shape.Get(), uav_obj.Get(),
-			color, true, alpha_source, alpha_border)) return false;
+			color, true, alpha_border, alpha_source)) return false;
 		break;
 	}
 	}
