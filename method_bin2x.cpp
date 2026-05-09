@@ -54,7 +54,7 @@ void csmain(uint2 id : SV_DispatchThreadID)
 		mid_idx_base = stride_mid * id.y - uint(range_mid_x[0]),
 		outer_l = alpha_base > 0 ? 0 : ~0u;
 
-	int2 pad = -1;
+	int2 pad = alpha_base > 0 ? int2(arc[L.x].y, arc[L.y].y) + delta.x - 1 : -1;
 	for (int x = min(0, range_mid_x[0]); x < size_dst.x; x++, pad -= 2) {
 		const uint2 l = (range_mid_x[0] <= x && x < range_mid_x[1]) ?
 			uint2(max(int2(2 * mid[uint(x) + mid_idx_base]) + int2(-delta.y, delta.y), 0)) : outer_l;
@@ -65,7 +65,7 @@ void csmain(uint2 id : SV_DispatchThreadID)
 		pad = max(pad, p);
 		if (x >= 0) dst[uint2(x, id.y)] = dot(clamp(pad + 1, 0, 2), int2(1, 4));
 	}
-	pad = -1;
+	pad = alpha_base > 0 ? -int2(arc[L.x].x, arc[L.y].x) - delta.x - 1 : -1;
 	for (x = max(size_dst.x, range_mid_x[1]); --x >= 0; pad -= 2) {
 		const uint2 l = (range_mid_x[0] <= x && x < range_mid_x[1]) ?
 			uint2(max(int2(2 * mid[uint(x) + mid_idx_base]) + int2(-delta.y, delta.y), 0)) : outer_l;
