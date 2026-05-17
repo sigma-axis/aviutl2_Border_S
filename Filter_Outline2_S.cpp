@@ -437,8 +437,8 @@ bool filter(FILTER_PROC_VIDEO* video)
 		blur2 = std::min(blur, std::abs(line) / 2);
 
 	// handle trivial cases.
-	if (video->object->width + d_aspect_x * distance2 <= 0 ||
-		video->object->height + d_aspect_y * distance2 <= 0 ||
+	if (video->object->width + 2 * d_aspect_x * distance2 <= 0 ||
+		video->object->height + 2 * d_aspect_y * distance2 <= 0 ||
 		line3 == 0 || alpha_border2 <= 0) {
 
 		// push alpha value.
