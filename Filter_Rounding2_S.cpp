@@ -167,6 +167,8 @@ bool filter(FILTER_PROC_VIDEO* video)
 	// handle trivial cases.
 	if (alpha == 0) return true;
 	else if (radius <= 0 && blur <= 0 && shrink <= 0) return true;
+	if (2 * aspect_x * shrink >= video->object->width ||
+		2 * aspect_y * shrink >= video->object->height) return false; // results empty.
 
 	return filter_core(
 		radius, shrink, blur / 2,
