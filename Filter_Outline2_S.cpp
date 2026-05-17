@@ -103,9 +103,9 @@ namespace params
 		&alpha_inner,
 		&alpha_source,
 
-		//&group_move,
-		//&move_x,
-		//&move_y,
+		&group_move,
+		&move_x,
+		&move_y,
 
 		&group_others,
 		&dist_aspect,
@@ -356,8 +356,9 @@ bool filter_core(
 			color, alpha_source, alpha_border,
 			composition == params::compositions::background)) return false;
 
-		// TODO: handle `obj.cx` and `obj.cy`.
-		//   equivalent to: obj.cx += (diff_li - diff_ri) / 2; obj.cy += (diff_ti - diff_bi) / 2;
+		// adjust center.
+		video->param->cx += (diff_li - diff_ri) / 2.0f;
+		video->param->cy += (diff_ti - diff_bi) / 2.0f;
 	}
 	else {
 		if (width_dst != width_src || height_dst != height_src) {
@@ -378,8 +379,9 @@ bool filter_core(
 		if (!image_ops::carve(width_dst, height_dst, width_dst, height_dst, 0, 0,
 			srv_shape.Get(), uav_obj.Get(), 1, false)) return false;
 
-		// TODO: handle `obj.cx` and `obj.cy`.
-		//   equivalent to: obj.cx += (size_li - size_ri) / 2; obj.cy += (size_ti - size_bi) / 2;
+		// adjust center.
+		video->param->cx += (size_li - size_ri) / 2.0f;
+		video->param->cy += (size_ti - size_bi) / 2.0f;
 	}
 
 	return true;
@@ -402,9 +404,8 @@ bool filter(FILTER_PROC_VIDEO* video)
 		alpha_inner = 1 - std::min(std::max(params::alpha_inner.value, params::alpha_inner.s), params::alpha_inner.e) / 100,
 		alpha_source = 1 - std::min(std::max(params::alpha_source.value, params::alpha_source.s), params::alpha_source.e) / 100,
 
-		//move_x = std::min(std::max(params::move_x.value, params::move_x.s), params::move_x.e),
-		//move_y = std::min(std::max(params::move_y.value, params::move_y.s), params::move_y.e),
-		move_x = 0, move_y = 0,
+		move_x = std::min(std::max(params::move_x.value, params::move_x.s), params::move_x.e),
+		move_y = std::min(std::max(params::move_y.value, params::move_y.s), params::move_y.e),
 
 		dist_aspect = std::min(std::max(params::dist_aspect.value, params::dist_aspect.s), params::dist_aspect.e) / 100,
 		dist_sup_ell_expo = common::conv_sup_ell_expo(

@@ -40,8 +40,8 @@ constinit COMMON_PLUGIN_TABLE plugin_table = {
 	.name = PLUGIN_NAME,
 	.information = PLUGIN_INFO_FMT(PLUGIN_NAME, PLUGIN_VERSION, PLUGIN_AUTHOR),
 };
-#define LEAST_AVIUTL2_VER_STR	"version 2.0beta39"
-constexpr uint32_t least_aviutl2_ver_num = 2003900;
+#define LEAST_AVIUTL2_VER_STR	"version 2.0beta46"
+constexpr uint32_t least_aviutl2_ver_num = 2004600;
 
 ANON_NS_E
 
