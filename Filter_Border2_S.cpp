@@ -36,7 +36,7 @@ ANON_NS_B
 ////////////////////////////////
 namespace params
 {
-	FILTER_ITEM_TRACK size{ L"サイズ", 5.00, 0.00, 500.00, 0.01 };
+	FILTER_ITEM_TRACK size{ L"サイズ", 5.00, -500.00, 500.00, 0.01 };
 	FILTER_ITEM_TRACK blur{ L"ぼかし", 0.00, 0.00, 200.00, 0.01 };
 	FILTER_ITEM_COLOR color{ L"縁色", 0xff'ff'ff }; // defaults white.
 	using methods = common::methods;
@@ -122,7 +122,7 @@ bool filter_core(
 	}
 	case params::directions::inner:
 	{
-		auto const bx = aspect_x * blur, by = aspect_y * blur;
+		auto const bx = (size >= 0 ? 1 : -1) * aspect_x * blur, by = (size >= 0 ? 1 : -1) * aspect_y * blur;
 		size_li = static_cast<int>(std::ceil(bx)) + static_cast<int>(std::ceil(-aspect_x * size - move_x));
 		size_ti = static_cast<int>(std::ceil(by)) + static_cast<int>(std::ceil(-aspect_y * size - move_y));
 		size_ri = static_cast<int>(std::ceil(bx)) + static_cast<int>(std::ceil(-aspect_x * size + move_x));
@@ -145,7 +145,7 @@ bool filter_core(
 				inf_def_seq[inf_def_num - 1] += r;
 			else inf_def_seq[inf_def_num++] = r;
 		};
-		double const d = size - blur,
+		double const d = size - (size >= 0 ? 1 : -1) * blur,
 			p = std::max(pos_radius - blur, 0.0),
 			n = std::max(neg_radius - blur, 0.0);
 		append_inf_def(std::min(0.0, d - p));
@@ -248,25 +248,30 @@ bool filter(FILTER_PROC_VIDEO* video)
 		aspect_y = std::min(1.0, 1 + aspect);
 
 	// handle trivial cases.
-	if (size == 0 && pos_radius == 0 && neg_radius == 0) {
+	if ((size <= 0 && pos_radius <= 0 && neg_radius <= 0 && move_x == 0 && move_y == 0) ||
+		alpha_border == 0) {
+		// push alpha value.
 		if (alpha_source < 1) {
 			if (!common::push_alpha(alpha_source, video)) return false;
 		}
-		return true;
-	}
-	else if (alpha_border == 0) {
-		if (direction == params::directions::outer && size > 0) {
-			if (!common::add_size(
-				static_cast<int>(std::ceil(aspect_x * size)),
-				static_cast<int>(std::ceil(aspect_y * size)), video)) return false;
-		}
-		if (alpha_source < 1) {
-			if (!common::push_alpha(alpha_source, video)) return false;
+
+		// extend the margin.
+		if (direction == params::directions::outer) {
+			int const
+				size_li = std::max(static_cast<int>(std::ceil(aspect_x * size - move_x)), 0),
+				size_ti = std::max(static_cast<int>(std::ceil(aspect_y * size - move_y)), 0),
+				size_ri = std::max(static_cast<int>(std::ceil(aspect_x * size + move_x)), 0),
+				size_bi = std::max(static_cast<int>(std::ceil(aspect_y * size + move_y)), 0);
+			if (size_li > 0 || size_ti > 0 || size_ri > 0 || size_bi > 0) {
+				if (!common::add_size(size_li, size_ti, size_ri, size_bi, video)) return false;
+				video->param->cx += (size_li - size_ri) / 2.0f;
+				video->param->cy += (size_ti - size_bi) / 2.0f;
+			}
 		}
 		return true;
 	}
 
-	return filter_core(size, pos_radius, neg_radius, std::max(0.0, size * blur / 2),
+	return filter_core(size, pos_radius, neg_radius, std::max(0.0, std::abs(size) * blur / 2),
 		aspect_x, aspect_y, sup_ell_expo,
 		move_x, move_y,
 		alpha_border, alpha_source,

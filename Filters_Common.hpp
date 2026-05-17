@@ -76,6 +76,16 @@ namespace Border_S::Filter::common
 	* @return Returns true if function succeeds; false otherwise.
 	*/
 	bool add_size(int diff_size_x, int diff_size_y, FILTER_PROC_VIDEO* video);
+	/**
+	* @brief Adds the specified size to the current object. The original image is copied to the the position (diff_size_l, diff_size_t) of the new buffer. Pixels outside of the original image are initialized to zero.
+	* @param diff_size_l The left size difference to add. Negative values will shrink the object.
+	* @param diff_size_t The top size difference to add. Negative values will shrink the object.
+	* @param diff_size_r The right size difference to add. Negative values will shrink the object.
+	* @param diff_size_b The bottom size difference to add. Negative values will shrink the object.
+	* @param video Pointer to the FILTER_PROC_VIDEO structure representing the current filter state.
+	* @return Returns true if function succeeds; false otherwise.
+	*/
+	bool add_size(int diff_size_l, int diff_size_t, int diff_size_r, int diff_size_b, FILTER_PROC_VIDEO* video);
 
 	/**
 	* @brief Generates a shader resource view by applying a sequential influence/deflection process from a source shader resource view to a destination texture.

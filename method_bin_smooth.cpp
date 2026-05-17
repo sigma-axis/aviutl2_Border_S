@@ -80,13 +80,14 @@ void csmain(uint2 id : SV_DispatchThreadID)
 {
 	if (any(id >= size_disk)) return;
 
-	const float2 p = int2(id - (size_disk >> 1)) - delta;
+	const int2 p0 = int2(id - (size_disk >> 1));
+	const float2 p = p0 - delta;
 	const float2
 		u = size > 0 ? p / size : 0,
 		v = size > 0 ? 2 * u / size : 0;
 	const float d = 1 - dot(u, u);
 	const float D = length(v);
-	disk[id] = saturate(D > 0 ? d / D : 1);
+	disk[id] = saturate(any(p0 != 0) && D > 0 ? d / D : 1);
 }
 )"; // usual ellipse. (distance by positive definite quadratic form.)
 constexpr char cs_src_arc_L1[] = R"(
@@ -102,13 +103,14 @@ void csmain(uint2 id : SV_DispatchThreadID)
 {
 	if (any(id >= size_disk)) return;
 
-	const float2 p = abs(int2(id - (size_disk >> 1)) - delta);
+	const int2 p0 = int2(id - (size_disk >> 1));
+	const float2 p = abs(p0 - delta);
 	const float2
 		u = size > 0 ? p / size : 0,
 		v = size > 0 ? 1 / size : 0;
 	const float d = 1 - dot(u, 1);
 	const float D = length(v);
-	disk[id] = saturate(D > 0 ? d / D : 1);
+	disk[id] = saturate(any(p0 != 0) && D > 0 ? d / D : 1);
 }
 )"; // rhombus (L^1 distance). exp == 1 or rx + ry - 2 * rx * ry >= 0.
 constexpr char cs_src_arc_box[] = R"(
@@ -124,9 +126,10 @@ void csmain(uint2 id : SV_DispatchThreadID)
 {
 	if (any(id >= size_disk)) return;
 
-	const float2 p = abs(int2(id - (size_disk >> 1)) - delta);
+	const int2 p0 = int2(id - (size_disk >> 1));
+	const float2 p = abs(p0 - delta);
 	const float2 d = size > 0 ? size - p : 1;
-	disk[id] = saturate(min(d.x, d.y));
+	disk[id] = saturate(any(p0 != 0) ? min(d.x, d.y) : 1);
 }
 )"; // L^infty distance (maximum among coordinates).
 constexpr char cs_src_arc_cross[] = R"(
@@ -142,9 +145,10 @@ void csmain(uint2 id : SV_DispatchThreadID)
 {
 	if (any(id >= size_disk)) return;
 
-	const float2 p = abs(int2(id - (size_disk >> 1)) - delta);
+	const int2 p0 = int2(id - (size_disk >> 1));
+	const float2 p = abs(p0 - delta);
 	const float2 d = size > 0 ? size - p : 1;
-	disk[id] = saturate(any(p == 0) ? min(d.x, d.y) : 0);
+	disk[id] = saturate(any(p <= 0.5) ? min(d.x, d.y) : 0);
 }
 )"; // cross shape (only points on the x/y axis are valid).
 constexpr char cs_src_arc_Lp[] = R"(
@@ -160,13 +164,14 @@ void csmain(uint2 id : SV_DispatchThreadID)
 {
 	if (any(id >= size_disk)) return;
 
-	const float2 p = abs(int2(id - (size_disk >> 1)) - delta);
+	const int2 p0 = int2(id - (size_disk >> 1));
+	const float2 p = abs(p0 - delta);
 	const float2
 		u = size > 0 ? p / size : 0,
 		v = size > 0 ? sup_ell_exp * pow(abs(u), sup_ell_exp - 1) / size : 0;
 	const float d = 1 - dot(pow(abs(u), sup_ell_exp), 1);
 	const float D = length(v);
-	disk[id] = saturate(D > 0 ? d / D : 1);
+	disk[id] = saturate(any(p0 != 0) && D > 0 ? d / D : 1);
 }
 )"; // L^p distance with p > 1.
 constexpr char cs_src_arc_cusp[] = R"(
@@ -183,9 +188,10 @@ void csmain(uint2 id : SV_DispatchThreadID)
 {
 	if (any(id >= size_disk)) return;
 
-	const float2 p = abs(int2(id - (size_disk >> 1)) - delta);
+	const int2 p0 = int2(id - (size_disk >> 1));
+	const float2 p = abs(p0 - delta);
 	float l;
-	if (any(p == 0)) {
+	if (any(p <= 0.5)) {
 		const float2 d = size - p;
 		l = min(d.x, d.y);
 	}

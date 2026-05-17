@@ -441,30 +441,25 @@ bool filter(FILTER_PROC_VIDEO* video)
 		video->object->height + d_aspect_y * distance2 <= 0 ||
 		line3 == 0 || alpha_border2 <= 0) {
 
-		// find the extension size.
-		int const
-			size_xi = std::min(std::max(
-				static_cast<int>(std::ceil(d_aspect_x * distance2 + l_aspect_x * std::max(line3, 0.0))), 0),
-				static_cast<int>(D3D::max_image_size - video->object->width) >> 1),
-			size_yi = std::min(std::max(
-				static_cast<int>(std::ceil(d_aspect_y * distance2 + l_aspect_y * std::max(line3, 0.0))), 0),
-				static_cast<int>(D3D::max_image_size - video->object->height) >> 1);
-		if (size_xi <= 0 && size_yi <= 0 && alpha_source >= 1) return true; // nothing to do.
-
-		auto obj = video->get_image_texture2d();
-		if (!D3D::init(obj)) return false;
-
 		// push alpha value.
 		if (alpha_source < 1) {
-			auto uav_obj = D3D::to_unordered_access_view(obj);
-			if (uav_obj == nullptr) return false;
-			if (!image_ops::push_alpha(video->object->width, video->object->height,
-				uav_obj.Get(), alpha_source)) return false;
+			if (!common::push_alpha(alpha_source, video)) return false;
 		}
 
 		// extend the margin.
-		if (size_xi > 0 || size_yi > 0) {
-			if (!common::add_size(size_xi, size_yi, video)) return false;
+		int const
+			size_li = std::max(static_cast<int>(
+				std::ceil(d_aspect_x * distance2 + l_aspect_x * std::max(line3, 0.0) - move_x)), 0),
+			size_ti = std::max(static_cast<int>(
+				std::ceil(d_aspect_y * distance2 + l_aspect_y * std::max(line3, 0.0) - move_y)), 0),
+			size_ri = std::max(static_cast<int>(
+				std::ceil(d_aspect_x * distance2 + l_aspect_x * std::max(line3, 0.0) + move_x)), 0),
+			size_bi = std::max(static_cast<int>(
+				std::ceil(d_aspect_y * distance2 + l_aspect_y * std::max(line3, 0.0) + move_y)), 0);
+		if (size_li > 0 || size_ti > 0 || size_ri > 0 || size_bi > 0) {
+			if (!common::add_size(size_li, size_ti, size_ri, size_bi, video)) return false;
+			video->param->cx += (size_li - size_ri) / 2.0f;
+			video->param->cy += (size_ti - size_bi) / 2.0f;
 		}
 		return true;
 	}

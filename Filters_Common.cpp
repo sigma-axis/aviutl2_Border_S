@@ -85,6 +85,11 @@ bool common::push_alpha(double alpha, FILTER_PROC_VIDEO* video)
 
 bool common::add_size(int diff_size_x, int diff_size_y, FILTER_PROC_VIDEO* video)
 {
+	return add_size(diff_size_x, diff_size_y, diff_size_x, diff_size_y, video);
+}
+
+bool common::add_size(int diff_size_l, int diff_size_t, int diff_size_r, int diff_size_b, FILTER_PROC_VIDEO* video)
+{
 	auto obj = video->get_image_texture2d();
 	if (!D3D::init(obj)) return false;
 
@@ -92,12 +97,30 @@ bool common::add_size(int diff_size_x, int diff_size_y, FILTER_PROC_VIDEO* video
 	if (src_obj == nullptr) return false;
 
 	int const width_src = video->object->width, height_src = video->object->height;
+	if (int L = diff_size_l + width_src + diff_size_r;
+		L > static_cast<int>(D3D::max_image_size)) {
+		int d = L - static_cast<int>(D3D::max_image_size);
+		diff_size_l -= (d + 1) >> 1;
+		diff_size_r -= (d + 1) >> 1;
+	}
+	else if (L <= 0) {
+		diff_size_l += (1 - L) >> 1;
+		diff_size_r += (1 - L) >> 1;
+	}
+	if (int L = diff_size_l + width_src + diff_size_r;
+		L > static_cast<int>(D3D::max_image_size)) {
+		int d = L - static_cast<int>(D3D::max_image_size);
+		diff_size_l -= (d + 1) >> 1;
+		diff_size_r -= (d + 1) >> 1;
+	}
+	else if (L <= 0) {
+		diff_size_l += (1 - L) >> 1;
+		diff_size_r += (1 - L) >> 1;
+	}
+
 	int const
-		diff_x = std::min(std::max(diff_size_x, -((width_src - 1) >> 1)),
-			(static_cast<int>(D3D::max_image_size) - width_src) >> 1),
-		diff_y = std::min(std::max(diff_size_y, -((height_src - 1) >> 1)),
-			(static_cast<int>(D3D::max_image_size) - height_src) >> 1);
-	int const width_dst = width_src + 2 * diff_x, height_dst = height_src + 2 * diff_y;
+		width_dst = width_src + diff_size_l + diff_size_r,
+		height_dst = height_src + diff_size_t + diff_size_b;
 
 	video->set_image_data(nullptr, width_dst, height_dst);
 	obj = video->get_image_texture2d();
@@ -107,15 +130,15 @@ bool common::add_size(int diff_size_x, int diff_size_y, FILTER_PROC_VIDEO* video
 	if (rtv_obj == nullptr) return false;
 	D3D::cxt->ClearRenderTargetView(rtv_obj.Get(), D3D::zero_color);
 	::D3D11_BOX const box{
-		.left = static_cast<uint32_t>(std::max(-diff_x, 0)),
-		.top = static_cast<uint32_t>(std::max(-diff_y, 0)),
+		.left = static_cast<uint32_t>(std::max(-diff_size_l, 0)),
+		.top = static_cast<uint32_t>(std::max(-diff_size_t, 0)),
 		.front = 0,
-		.right = static_cast<uint32_t>(std::min(-diff_x + width_dst, width_src)),
-		.bottom = static_cast<uint32_t>(std::min(-diff_y + height_dst, height_src)),
+		.right = static_cast<uint32_t>(std::min(-diff_size_l + width_dst, width_src)),
+		.bottom = static_cast<uint32_t>(std::min(-diff_size_t + height_dst, height_src)),
 		.back = 1,
 	};
 	D3D::cxt->CopySubresourceRegion(obj, 0,
-		static_cast<uint32_t>(std::max(diff_x, 0)), static_cast<uint32_t>(std::max(diff_y, 0)), 0,
+		static_cast<uint32_t>(std::max(diff_size_l, 0)), static_cast<uint32_t>(std::max(diff_size_t, 0)), 0,
 		src_obj.Get(), 0, &box);
 
 	return true;
@@ -169,23 +192,24 @@ D3D::ComPtr<::ID3D11ShaderResourceView> common::sequential_inf_def(
 	}
 
 	// create the buffer for the shape.
+	bool const require_second_buff = inf_def_num > 0 || blur > 0 || (delta_x != 0 || delta_y != 0);
 	D3D::ComPtr<::ID3D11Texture2D> shapes[] = {
 		D3D::create_texture(::DXGI_FORMAT_R32_FLOAT, width_max, height_max),
-		D3D::create_texture(::DXGI_FORMAT_R32_FLOAT, width_max, height_max),
+		require_second_buff ? D3D::create_texture(::DXGI_FORMAT_R32_FLOAT, width_max, height_max) : nullptr,
 	};
-	if (shapes[0] == nullptr || shapes[1] == nullptr) return nullptr;
+	if (shapes[0] == nullptr || (require_second_buff && shapes[1] == nullptr)) return nullptr;
 
 	// prepare views.
 	D3D::ComPtr<::ID3D11UnorderedAccessView> uav_shapes[] = {
 		D3D::to_unordered_access_view(shapes[0].Get()),
-		D3D::to_unordered_access_view(shapes[1].Get()),
+		require_second_buff ? D3D::to_unordered_access_view(shapes[1].Get()) : nullptr,
 	};
-	if (uav_shapes[0] == nullptr || uav_shapes[1] == nullptr) return nullptr;
+	if (uav_shapes[0] == nullptr || (require_second_buff && uav_shapes[1] == nullptr)) return nullptr;
 	D3D::ComPtr<::ID3D11ShaderResourceView> srv_shapes[] = {
 		D3D::to_shader_resource_view(shapes[0].Get()),
-		D3D::to_shader_resource_view(shapes[1].Get()),
+		require_second_buff ? D3D::to_shader_resource_view(shapes[1].Get()) : nullptr,
 	};
-	if (srv_shapes[0] == nullptr || srv_shapes[1] == nullptr) return nullptr;
+	if (srv_shapes[0] == nullptr || (require_second_buff && srv_shapes[1] == nullptr)) return nullptr;
 
 	// copy alpha channel.
 	if (int const
@@ -516,6 +540,13 @@ D3D::ComPtr<::ID3D11ShaderResourceView> common::sequential_inf_def(
 		}
 		default: return nullptr;
 		}
+	}
+	else if (delta_x != 0 || delta_y != 0) {
+		// handle delta moves.
+		ops::delta_move(width_dst, height_dst,
+			srv_shapes[idx_curr_shape_src].Get(), uav_shapes[idx_curr_shape_src ^ 1].Get(),
+			delta_x, delta_y);
+		idx_curr_shape_src ^= 1;
 	}
 
 	// apply blur.
