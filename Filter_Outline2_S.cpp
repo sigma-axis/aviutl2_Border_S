@@ -50,7 +50,7 @@ namespace params
 			background = 0,
 			foreground = 1,
 		};
-		constexpr static id clamp(int value) { return static_cast<id>(std::min(std::max(value, 0), 1)); }
+		constexpr static id clamp(int value) { return static_cast<id>(std::clamp(value, 0, 1)); }
 		constexpr static FILTER_ITEM_SELECT::ITEM items[] = {
 			{ L"背面", background },
 			{ L"前面", foreground },
@@ -79,7 +79,7 @@ namespace params
 			inner = 1,
 			faster = 2,
 		};
-		constexpr static id clamp(int value) { return static_cast<id>(std::min(std::max(value, 0), 2)); }
+		constexpr static id clamp(int value) { return static_cast<id>(std::clamp(value, 0, 2)); }
 		constexpr static FILTER_ITEM_SELECT::ITEM items[] = {
 			{ L"外側優先", outer },
 			{ L"内側優先", inner },
@@ -406,26 +406,26 @@ bool filter(FILTER_PROC_VIDEO* video)
 {
 	// take parameters.
 	double const
-		distance = std::min(std::max(params::distance.value, params::distance.s), params::distance.e),
-		line = std::min(std::max(params::line.value, params::line.s), params::line.e),
-		blur = std::min(std::max(params::blur.value, params::blur.s), params::blur.e),
-		a_param = std::min(std::max(params::a_param.value, params::a_param.s), params::a_param.e) / 100,
+		distance = std::clamp(params::distance.value, params::distance.s, params::distance.e),
+		line = std::clamp(params::line.value, params::line.s, params::line.e),
+		blur = std::clamp(params::blur.value, params::blur.s, params::blur.e),
+		a_param = std::clamp(params::a_param.value, params::a_param.s, params::a_param.e) / 100,
 
-		alpha_border = 1 - std::min(std::max(params::alpha_border.value, params::alpha_border.s), params::alpha_border.e) / 100,
-		alpha_inner = 1 - std::min(std::max(params::alpha_inner.value, params::alpha_inner.s), params::alpha_inner.e) / 100,
-		alpha_source = 1 - std::min(std::max(params::alpha_source.value, params::alpha_source.s), params::alpha_source.e) / 100,
+		alpha_border = 1 - std::clamp(params::alpha_border.value, params::alpha_border.s, params::alpha_border.e) / 100,
+		alpha_inner = 1 - std::clamp(params::alpha_inner.value, params::alpha_inner.s, params::alpha_inner.e) / 100,
+		alpha_source = 1 - std::clamp(params::alpha_source.value, params::alpha_source.s, params::alpha_source.e) / 100,
 
-		move_x = std::min(std::max(params::move_x.value, params::move_x.s), params::move_x.e),
-		move_y = std::min(std::max(params::move_y.value, params::move_y.s), params::move_y.e),
+		move_x = std::clamp(params::move_x.value, params::move_x.s, params::move_x.e),
+		move_y = std::clamp(params::move_y.value, params::move_y.s, params::move_y.e),
 
-		dist_aspect = std::min(std::max(params::dist_aspect.value, params::dist_aspect.s), params::dist_aspect.e) / 100,
+		dist_aspect = std::clamp(params::dist_aspect.value, params::dist_aspect.s, params::dist_aspect.e) / 100,
 		dist_sup_ell_expo = common::conv_sup_ell_expo(
-			std::min(std::max(params::dist_sup_ell_expo.value, params::dist_sup_ell_expo.s), params::dist_sup_ell_expo.e) / 100),
-		pos_radius = std::min(std::max(params::pos_radius.value, params::pos_radius.s), params::pos_radius.e),
-		neg_radius = std::min(std::max(params::neg_radius.value, params::neg_radius.s), params::neg_radius.e),
-		line_aspect = std::min(std::max(params::line_aspect.value, params::line_aspect.s), params::line_aspect.e) / 100,
+			std::clamp(params::dist_sup_ell_expo.value, params::dist_sup_ell_expo.s, params::dist_sup_ell_expo.e) / 100),
+		pos_radius = std::clamp(params::pos_radius.value, params::pos_radius.s, params::pos_radius.e),
+		neg_radius = std::clamp(params::neg_radius.value, params::neg_radius.s, params::neg_radius.e),
+		line_aspect = std::clamp(params::line_aspect.value, params::line_aspect.s, params::line_aspect.e) / 100,
 		line_sup_ell_expo = common::conv_sup_ell_expo(
-			std::min(std::max(params::line_sup_ell_expo.value, params::line_sup_ell_expo.s), params::line_sup_ell_expo.e) / 100);
+			std::clamp(params::line_sup_ell_expo.value, params::line_sup_ell_expo.s, params::line_sup_ell_expo.e) / 100);
 	auto const method = params::methods::clamp(params::method.value);
 	auto const composition = params::compositions::clamp(params::composition.value);
 	auto const direction = params::directions::clamp(params::direction.value);

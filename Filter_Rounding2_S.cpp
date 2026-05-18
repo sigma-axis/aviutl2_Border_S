@@ -149,16 +149,16 @@ bool filter(FILTER_PROC_VIDEO* video)
 {
 	// take parameters.
 	double const
-		radius = std::min(std::max(params::radius.value, params::radius.s), params::radius.e),
-		blur = std::min(std::max(params::blur.value, params::blur.s), params::blur.e),
-		a_param = std::min(std::max(params::a_param.value, params::a_param.s), params::a_param.e) / 100,
+		radius = std::clamp(params::radius.value, params::radius.s, params::radius.e),
+		blur = std::clamp(params::blur.value, params::blur.s, params::blur.e),
+		a_param = std::clamp(params::a_param.value, params::a_param.s, params::a_param.e) / 100,
 
-		shrink = std::min(std::max(params::shrink.value, params::shrink.s), params::shrink.e),
-		alpha = std::min(std::max(params::alpha.value, params::alpha.s), params::alpha.e) / 100,
+		shrink = std::clamp(params::shrink.value, params::shrink.s, params::shrink.e),
+		alpha = std::clamp(params::alpha.value, params::alpha.s, params::alpha.e) / 100,
 
-		aspect = std::min(std::max(params::aspect.value, params::aspect.s), params::aspect.e) / 100,
+		aspect = std::clamp(params::aspect.value, params::aspect.s, params::aspect.e) / 100,
 		sup_ell_expo = common::conv_sup_ell_expo(
-			std::min(std::max(params::sup_ell_expo.value, params::sup_ell_expo.s), params::sup_ell_expo.e) / 100);
+			std::clamp(params::sup_ell_expo.value, params::sup_ell_expo.s, params::sup_ell_expo.e) / 100);
 
 	auto const method = params::methods::clamp(params::method.value);
 	auto const fixed_size = alpha < 1 || params::fixed_size.value;

@@ -47,7 +47,7 @@ namespace params
 			outer = 0,
 			inner = 1,
 		};
-		constexpr static id clamp(int value) { return static_cast<id>(std::min(std::max(value, 0), 1)); }
+		constexpr static id clamp(int value) { return static_cast<id>(std::clamp(value, 0, 1)); }
 		constexpr static FILTER_ITEM_SELECT::ITEM items[] = {
 			{ L"外側縁取り", outer },
 			{ L"内側縁取り", inner },
@@ -226,21 +226,21 @@ bool filter(FILTER_PROC_VIDEO* video)
 {
 	// take parameters.
 	double const
-		size = std::min(std::max(params::size.value, params::size.s), params::size.e),
-		blur = std::min(std::max(params::blur.value, params::blur.s), params::blur.e) / 100,
-		a_param = std::min(std::max(params::a_param.value, params::a_param.s), params::a_param.e) / 100,
+		size = std::clamp(params::size.value, params::size.s, params::size.e),
+		blur = std::clamp(params::blur.value, params::blur.s, params::blur.e) / 100,
+		a_param = std::clamp(params::a_param.value, params::a_param.s, params::a_param.e) / 100,
 
-		alpha_border = 1 - std::min(std::max(params::alpha_border.value, params::alpha_border.s), params::alpha_border.e) / 100,
-		alpha_source = 1 - std::min(std::max(params::alpha_source.value, params::alpha_source.s), params::alpha_source.e) / 100,
+		alpha_border = 1 - std::clamp(params::alpha_border.value, params::alpha_border.s, params::alpha_border.e) / 100,
+		alpha_source = 1 - std::clamp(params::alpha_source.value, params::alpha_source.s, params::alpha_source.e) / 100,
 
-		move_x = std::min(std::max(params::move_x.value, params::move_x.s), params::move_x.e),
-		move_y = std::min(std::max(params::move_y.value, params::move_y.s), params::move_y.e),
+		move_x = std::clamp(params::move_x.value, params::move_x.s, params::move_x.e),
+		move_y = std::clamp(params::move_y.value, params::move_y.s, params::move_y.e),
 
-		aspect = std::min(std::max(params::aspect.value, params::aspect.s), params::aspect.e) / 100,
-		pos_radius = std::min(std::max(params::pos_radius.value, params::pos_radius.s), params::pos_radius.e),
-		neg_radius = std::min(std::max(params::neg_radius.value, params::neg_radius.s), params::neg_radius.e),
+		aspect = std::clamp(params::aspect.value, params::aspect.s, params::aspect.e) / 100,
+		pos_radius = std::clamp(params::pos_radius.value, params::pos_radius.s, params::pos_radius.e),
+		neg_radius = std::clamp(params::neg_radius.value, params::neg_radius.s, params::neg_radius.e),
 		sup_ell_expo = common::conv_sup_ell_expo(
-			std::min(std::max(params::sup_ell_expo.value, params::sup_ell_expo.s), params::sup_ell_expo.e) / 100);
+			std::clamp(params::sup_ell_expo.value, params::sup_ell_expo.s, params::sup_ell_expo.e) / 100);
 	auto const method = params::methods::clamp(params::method.value);
 	auto const direction = params::directions::clamp(params::direction.value);
 	auto const blur_type = params::blur_spec::clamp(params::blur_type.value);

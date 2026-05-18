@@ -11,6 +11,7 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 */
 
 #include <cstdint>
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <bit>
@@ -435,7 +436,7 @@ inline double practical_expo(double superellipse_exp)
 	constexpr double thresh = 232.0;
 	if (std::isinf(superellipse_exp) || superellipse_exp <= 0)
 		return superellipse_exp;
-	return std::min(std::max(superellipse_exp, 1 / thresh), thresh);
+	return std::clamp(superellipse_exp, 1 / thresh, thresh);
 }
 double find_alpha_rate(double rad_short, double rad_long, double superellipse_exp, double blurness)
 {
@@ -450,7 +451,7 @@ double find_alpha_rate(double rad_short, double rad_long, double superellipse_ex
 	auto const wt_center = [](double r, double asp) -> double {
 		if (asp * r < 1) return std::min(2 * r, 1.0);
 		auto n = std::floor(std::max(r - 0.5, 0.0) * asp);
-		auto m = std::min(std::max(2 * (r - (n + 1) / asp), 0.0), 1.0);
+		auto m = std::clamp(2 * (r - (n + 1) / asp), 0.0, 1.0);
 		return 2 * n + 1 + 2 * m;
 	};
 	auto const sum_half = (est_sum(rad_long, 1, rad_short / rad_long)

@@ -25,7 +25,7 @@ namespace Border_S::Filter::common
 			sum = 3,
 			max = 4,
 		};
-		constexpr static id clamp(int value) { return static_cast<id>(std::min(std::max(value, 0), 4)); }
+		constexpr static id clamp(int value) { return static_cast<id>(std::clamp(value, 0, 4)); }
 		constexpr static FILTER_ITEM_SELECT::ITEM items[] = {
 			{ L"2値化", bin },
 			{ L"2値化倍精度", bin2x },
@@ -55,7 +55,7 @@ namespace Border_S::Filter::common
 			triangular = 0,
 			gaussian = 1,
 		};
-		constexpr static id clamp(int value) { return static_cast<id>(std::min(std::max(value, 0), 1)); }
+		constexpr static id clamp(int value) { return static_cast<id>(std::clamp(value, 0, 1)); }
 		constexpr static FILTER_ITEM_SELECT::ITEM items[] = {
 			{ L"三角分布", triangular },
 			{ L"ガウス分布", gaussian },
