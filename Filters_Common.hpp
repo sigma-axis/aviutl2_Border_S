@@ -50,6 +50,19 @@ namespace Border_S::Filter::common
 		}
 	};
 
+	struct blur {
+		enum id : int {
+			triangular = 0,
+			gaussian = 1,
+		};
+		constexpr static id clamp(int value) { return static_cast<id>(std::min(std::max(value, 0), 1)); }
+		constexpr static FILTER_ITEM_SELECT::ITEM items[] = {
+			{ L"三角分布", triangular },
+			{ L"ガウス分布", gaussian },
+			{ nullptr, {} },
+		};
+	};
+
 	// converts numbers [-3, 3] into [0, +oo], for the exponent of superellipses.
 	constexpr double conv_sup_ell_expo(double track_value)
 	{
@@ -112,7 +125,7 @@ namespace Border_S::Filter::common
 		int width_dst, int height_dst,
 		double offset_x, double offset_y, // offset of source within dest.
 		::ID3D11ShaderResourceView* srv_src, bool is_src_scalar,
-		double const* inf_def_seq, int inf_def_num, double blur,
+		double const* inf_def_seq, int inf_def_num, double blur, blur::id blur_type,
 		double aspect_x, double aspect_y,
 		double superellipse_exp,
 		methods::id method, double a_param);

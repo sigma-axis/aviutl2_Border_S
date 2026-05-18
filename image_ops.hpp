@@ -171,8 +171,14 @@ namespace Border_S::image_ops
 			::ID3D11UnorderedAccessView* uav_dst,
 			color_float const& color,
 			double alpha_src, double alpha_shape, bool is_src_front);
+
+		enum class blur_type : int {
+			triangular = 0,
+			gaussian = 1,
+		};
 		/**
 		* @brief Applies a blur effect to a source image, storing the intermediate result in a temporary buffer.
+		* @param type Type of blur to apply (triangular or gaussian).
 		* @param width_src Width of the source image in pixels.
 		* @param height_src Height of the source image in pixels.
 		* @param src Source views for the image.
@@ -181,15 +187,11 @@ namespace Border_S::image_ops
 		* @param blur_half_y Vertical blur radius. The half of the support of the blur kernel.
 		* @returns true if the function succeeded; false otherwise.
 		*/
-		static bool blur(
+		static bool blur(blur_type type,
 			int width_src, int height_src,
 			D3D::cs_views const& src, D3D::cs_views const& tmp,
 			double blur_half_x, double blur_half_y);
 
-		static bool gaussian_blur(
-			int width_src, int height_src,
-			D3D::cs_views const& src, D3D::cs_views const& tmp,
-			double blur_half_x, double blur_half_y);
 		/**
 		* @brief Applies a small movement of the source image to the destination texture based on specified delta values, which is meant to be within the range [-0.5, +0.5].
 		* @param width Width of the source and destination textures in pixels.

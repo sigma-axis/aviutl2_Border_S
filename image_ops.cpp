@@ -696,15 +696,11 @@ bool ops::combine(
 	return true;
 }
 
-bool ops::blur(
-	int width_src, int height_src,
+ANON_NS_B
+bool blur_triangular(int width_src, int height_src,
 	D3D::cs_views const& src, D3D::cs_views const& tmp,
 	double blur_half_x, double blur_half_y)
 {
-	if (blur_half_x <= 0 && blur_half_y <= 0) return true; // nothing to do.
-
-	if (!init()) return false;
-
 	int const
 		blur_half_xi = static_cast<int>(std::ceil(blur_half_x)),
 		blur_half_yi = static_cast<int>(std::ceil(blur_half_y));
@@ -756,19 +752,15 @@ bool ops::blur(
 	return true;
 }
 
-bool ops::gaussian_blur(int width_src, int height_src,
+bool blur_gaussian(int width_src, int height_src,
 	D3D::cs_views const& src, D3D::cs_views const& tmp,
 	double blur_half_x, double blur_half_y)
 {
-	if (blur_half_x <= 0 && blur_half_y <= 0) return true; // nothing to do.
-
-	if (!init()) return false;
-
 	int const
 		blur_half_xi = static_cast<int>(std::ceil(blur_half_x)),
 		blur_half_yi = static_cast<int>(std::ceil(blur_half_y));
 
-	// the triangular distribution of the same blur_half has the variance of x 1/6.
+	// the triangular distribution of the support [-1, +1] has the variance of 1/6.
 	const double
 		inv_vari_x = 6 / ((blur_half_x + 0.5) * (blur_half_x + 0.5)),
 		inv_vari_y = 6 / ((blur_half_y + 0.5) * (blur_half_y + 0.5));
@@ -827,6 +819,24 @@ bool ops::gaussian_blur(int width_src, int height_src,
 	D3D::cxt->ClearState();
 
 	return true;
+}
+ANON_NS_E
+
+bool ops::blur(blur_type type,
+	int width_src, int height_src,
+	D3D::cs_views const& src, D3D::cs_views const& tmp,
+	double blur_half_x, double blur_half_y)
+{
+	if (blur_half_x <= 0 && blur_half_y <= 0) return true; // nothing to do.
+
+	if (!init()) return false;
+
+	switch (type) {
+	case blur_type::triangular: default:
+		return blur_triangular(width_src, height_src, src, tmp, blur_half_x, blur_half_y);
+	case blur_type::gaussian:
+		return blur_gaussian(width_src, height_src, src, tmp, blur_half_x, blur_half_y);
+	}
 }
 
 bool ops::delta_move(

@@ -50,6 +50,8 @@ namespace params
 	FILTER_ITEM_TRACK alpha{ L"透明度", +100.00, -100.00, +100.00, 0.01 };
 	FILTER_ITEM_TRACK aspect{ L"縦横比", 0.000, -100.000, +100.000, 0.001 };
 	FILTER_ITEM_TRACK sup_ell_expo{ L"膨らみ", 100.000, -300.000, +300.00, 0.001 };
+	using blur_spec = common::blur;
+	FILTER_ITEM_SELECT blur_type{ L"ぼかしの種類", common::blur::triangular, const_cast<FILTER_ITEM_SELECT::ITEM*>(common::blur::items) };
 
 	constexpr void* all[] = {
 		&radius,
@@ -65,6 +67,7 @@ namespace params
 		&alpha,
 		&aspect,
 		&sup_ell_expo,
+		&blur_type,
 
 		nullptr,
 	};
@@ -78,6 +81,7 @@ bool filter_core(
 	double aspect_x, double aspect_y, double superellipse_exp,
 	double alpha, bool fixed_size,
 	params::methods::id method, double a_param,
+	params::blur_spec::id blur_type,
 	FILTER_PROC_VIDEO* video)
 {
 	// determine the input and output dimensions.
@@ -115,7 +119,7 @@ bool filter_core(
 	auto srv_shape = common::sequential_inf_def(
 		width_src, height_src, width_src, height_src, 0, 0,
 		srv_obj.Get(), false,
-		inf_def_seq, inf_def_num, blur,
+		inf_def_seq, inf_def_num, blur, blur_type,
 		aspect_x, aspect_y, superellipse_exp,
 		method, a_param);
 	if (srv_shape == nullptr) return false;
@@ -158,6 +162,7 @@ bool filter(FILTER_PROC_VIDEO* video)
 
 	auto const method = params::methods::clamp(params::method.value);
 	auto const fixed_size = alpha < 1 || params::fixed_size.value;
+	auto const blur_type = params::blur_spec::clamp(params::blur_type.value);
 
 	// further calculations.
 	double const
@@ -174,7 +179,7 @@ bool filter(FILTER_PROC_VIDEO* video)
 		radius, shrink, blur / 2,
 		aspect_x, aspect_y, sup_ell_expo,
 		alpha, fixed_size,
-		method, a_param,
+		method, a_param, blur_type,
 		video);
 }
 ANON_NS_E

@@ -64,6 +64,15 @@ inline void avoid_quarter_integral(double& x)
 	if (x != 0 && (static_cast<int>(std::round(4000 * x)) - 1000) % 2000 == 0)
 		x += 1.0 / 4000;
 }
+
+inline ops::blur_type conv(common::blur::id type)
+{
+	switch (type) {
+	default:
+	case common::blur::triangular: return ops::blur_type::triangular;
+	case common::blur::gaussian: return ops::blur_type::gaussian;
+	}
+}
 ANON_NS_E
 
 
@@ -149,7 +158,7 @@ D3D::ComPtr<::ID3D11ShaderResourceView> common::sequential_inf_def(
 	int width_dst, int height_dst,
 	double offset_x, double offset_y, // offset of source within dest.
 	::ID3D11ShaderResourceView* srv_src, bool is_src_scalar,
-	double const* inf_def_seq, int inf_def_num, double blur,
+	double const* inf_def_seq, int inf_def_num, double blur, common::blur::id blur_type,
 	double aspect_x, double aspect_y,
 	double superellipse_exp,
 	methods::id method, double a_param)
@@ -551,7 +560,7 @@ D3D::ComPtr<::ID3D11ShaderResourceView> common::sequential_inf_def(
 
 	// apply blur.
 	if (blur > 0) {
-		if (!ops::blur(
+		if (!ops::blur(conv(blur_type),
 			width_dst - 2 * blur_xi, height_dst - 2 * blur_yi,
 			{ srv_shapes[idx_curr_shape_src].Get(), uav_shapes[idx_curr_shape_src].Get() },
 			{ srv_shapes[idx_curr_shape_src ^ 1].Get(), uav_shapes[idx_curr_shape_src ^ 1].Get() },

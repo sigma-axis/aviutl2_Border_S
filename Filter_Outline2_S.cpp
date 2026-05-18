@@ -88,6 +88,8 @@ namespace params
 		};
 	};
 	FILTER_ITEM_SELECT direction{ L"手順", directions::outer, const_cast<FILTER_ITEM_SELECT::ITEM*>(directions::items) };
+	using blur_spec = common::blur;
+	FILTER_ITEM_SELECT blur_type{ L"ぼかしの種類", common::blur::triangular, const_cast<FILTER_ITEM_SELECT::ITEM*>(common::blur::items) };
 
 	constexpr void* all[] = {
 		&distance,
@@ -115,6 +117,7 @@ namespace params
 		&line_aspect,
 		&line_sup_ell_expo,
 		&direction,
+		&blur_type,
 
 		nullptr,
 	};
@@ -123,7 +126,15 @@ namespace params
 ////////////////////////////////
 // filter functions.
 ////////////////////////////////
-bool apply_blur(int width, int height, double blur_x, double blur_y,
+inline image_ops::blur_type conv(common::blur::id type)
+{
+	switch (type) {
+	default:
+	case common::blur::triangular: return image_ops::blur_type::triangular;
+	case common::blur::gaussian: return image_ops::blur_type::gaussian;
+	}
+}
+bool apply_blur(int width, int height, double blur_x, double blur_y, params::blur_spec::id blur_type,
 	::ID3D11Texture2D* src, D3D::cs_views const& src_views,
 	::ID3D11Texture2D* dst, D3D::cs_views const& dst_views)
 {
@@ -145,8 +156,8 @@ bool apply_blur(int width, int height, double blur_x, double blur_y,
 	D3D::cxt->CopySubresourceRegion(dst, 0, 0, 0, 0, src, 0, &box);
 
 	// apply blur.
-	return image_ops::blur(width_src, height_src,
-		dst_views, src_views, blur_x, blur_y);
+	return image_ops::blur(conv(blur_type),
+		width_src, height_src, dst_views, src_views, blur_x, blur_y);
 }
 
 bool filter_core(
@@ -156,7 +167,7 @@ bool filter_core(
 	double move_x, double move_y,
 	params::methods::id method, double a_param,
 	params::compositions::id composition, double alpha_border, double alpha_inner, double alpha_source,
-	color_float const& color, params::directions::id direction,
+	color_float const& color, params::directions::id direction, params::blur_spec::id blur_type,
 	FILTER_PROC_VIDEO* video)
 {
 	// determine the input and output dimensions.
@@ -253,7 +264,7 @@ bool filter_core(
 		auto srv_pre = common::sequential_inf_def(
 			width_src, height_src, width_dst, height_dst, pre_infl_xi, pre_infl_yi,
 			srv_src_obj.Get(), false,
-			&size_pre_infl, 1, 0,
+			&size_pre_infl, 1, 0, params::blur_spec::triangular,
 			pre_aspect_x, pre_aspect_y, 0 /* cross shape */,
 			params::methods::intermed_method(method), a_param);
 		if (srv_pre == nullptr) return false;
@@ -263,7 +274,7 @@ bool filter_core(
 			width_src + 2 * pre_infl_xi, height_src + 2 * pre_infl_yi, width_dst, height_dst,
 			size_li + move_x - pre_infl_xi, size_ti + move_y - pre_infl_yi,
 			srv_pre.Get(), true,
-			inf_def_seq, inf_def_num, 0,
+			inf_def_seq, inf_def_num, 0, params::blur_spec::triangular,
 			d_aspect_x, d_aspect_y, d_superellipse_expo,
 			method, params::methods::second_param_a(a_param, method));
 		if (srv_shape == nullptr) return false;
@@ -279,7 +290,7 @@ bool filter_core(
 			auto uav_pre = D3D::to_unordered_access_view(pre.Get());
 			if (uav_pre == nullptr) return false;
 
-			if (!apply_blur(width_dst, height_dst, l_aspect_x * adj_blur, l_aspect_y * adj_blur,
+			if (!apply_blur(width_dst, height_dst, l_aspect_x * adj_blur, l_aspect_y * adj_blur, blur_type,
 				shape.Get(), { srv_shape.Get(), uav_shape.Get() },
 				pre.Get(), { srv_pre.Get(), uav_pre.Get() })) return false;
 			srv_shape.Swap(srv_pre);
@@ -290,7 +301,7 @@ bool filter_core(
 		srv_shape = common::sequential_inf_def(
 			width_src, height_src, width_dst, height_dst, size_li + move_x, size_ti + move_y,
 			srv_src_obj.Get(), false,
-			inf_def_seq, inf_def_num, has_hole ? 0 : adj_blur,
+			inf_def_seq, inf_def_num, has_hole ? 0 : adj_blur, blur_type,
 			d_aspect_x, d_aspect_y, d_superellipse_expo,
 			method, a_param);
 		if (srv_shape == nullptr) return false;
@@ -301,7 +312,7 @@ bool filter_core(
 		auto srv_hole = common::sequential_inf_def(
 			width_dst, height_dst, width_dst, height_dst, 0, 0,
 			srv_shape.Get(), true,
-			&adj_line, 1, 0,
+			&adj_line, 1, 0, params::blur_spec::triangular,
 			l_aspect_x, l_aspect_y, l_superellipse_expo,
 			method, params::methods::second_param_a(a_param, method));
 		if (srv_hole == nullptr) return false;
@@ -326,7 +337,7 @@ bool filter_core(
 			auto uav_hole = D3D::to_unordered_access_view(hole.Get());
 			if (uav_hole == nullptr) return false;
 
-			if (!apply_blur(width_dst, height_dst, l_aspect_x * adj_blur, l_aspect_y * adj_blur,
+			if (!apply_blur(width_dst, height_dst, l_aspect_x * adj_blur, l_aspect_y * adj_blur, blur_type,
 				shape.Get(), { srv_shape.Get(), uav_shape.Get() },
 				hole.Get(), { srv_hole.Get(), uav_hole.Get() })) return false;
 			srv_shape.Swap(srv_hole);
@@ -418,6 +429,7 @@ bool filter(FILTER_PROC_VIDEO* video)
 	auto const method = params::methods::clamp(params::method.value);
 	auto const composition = params::compositions::clamp(params::composition.value);
 	auto const direction = params::directions::clamp(params::direction.value);
+	auto const blur_type = params::blur_spec::clamp(params::blur_type.value);
 	auto const color = color_float::from_rgb(params::color.value.code & 0xffffff);
 
 	// further calculations.
@@ -471,7 +483,7 @@ bool filter(FILTER_PROC_VIDEO* video)
 		move_x, move_y,
 		method, a_param,
 		composition, alpha_border2, alpha_inner, alpha_source,
-		color, direction,
+		color, direction, blur_type,
 		video);
 }
 ANON_NS_E
