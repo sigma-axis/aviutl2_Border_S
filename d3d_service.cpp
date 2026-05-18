@@ -95,7 +95,7 @@ ComPtr<::ID3D11SamplerState> D3D::create_sampler_state(D3D11_FILTER filter, D3D1
 		.MipLODBias = 0.0f,
 		.MaxAnisotropy = 1,
 		.ComparisonFunc = D3D11_COMPARISON_NEVER,
-		.BorderColor = { 1.0f, 1.0f, 1.0f, 1.0f },
+		.BorderColor = { 0.0f, 0.0f, 0.0f, 0.0f },
 		.MinLOD = -FLT_MAX,
 		.MaxLOD = FLT_MAX,
 	};

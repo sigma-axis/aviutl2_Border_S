@@ -185,6 +185,11 @@ namespace Border_S::image_ops
 			int width_src, int height_src,
 			D3D::cs_views const& src, D3D::cs_views const& tmp,
 			double blur_half_x, double blur_half_y);
+
+		static bool gaussian_blur(
+			int width_src, int height_src,
+			D3D::cs_views const& src, D3D::cs_views const& tmp,
+			double blur_half_x, double blur_half_y);
 		/**
 		* @brief Applies a small movement of the source image to the destination texture based on specified delta values, which is meant to be within the range [-0.5, +0.5].
 		* @param width Width of the source and destination textures in pixels.
