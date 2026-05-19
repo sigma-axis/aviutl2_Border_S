@@ -85,7 +85,7 @@ ComPtr<::ID3D11ComputeShader> D3D::create_compute_shader(char const* src, size_t
 	return ret;
 }
 
-ComPtr<::ID3D11SamplerState> D3D::create_sampler_state(D3D11_FILTER filter, D3D11_TEXTURE_ADDRESS_MODE address_u, D3D11_TEXTURE_ADDRESS_MODE address_v)
+ComPtr<::ID3D11SamplerState> D3D::create_sampler_state(D3D11_FILTER filter, D3D11_TEXTURE_ADDRESS_MODE address_u, D3D11_TEXTURE_ADDRESS_MODE address_v, float const (&color)[4])
 {
 	::D3D11_SAMPLER_DESC desc{
 		.Filter = filter,
@@ -95,7 +95,7 @@ ComPtr<::ID3D11SamplerState> D3D::create_sampler_state(D3D11_FILTER filter, D3D1
 		.MipLODBias = 0.0f,
 		.MaxAnisotropy = 1,
 		.ComparisonFunc = D3D11_COMPARISON_NEVER,
-		.BorderColor = { 0.0f, 0.0f, 0.0f, 0.0f },
+		.BorderColor = { color[0], color[1], color[2], color[3] },
 		.MinLOD = -FLT_MAX,
 		.MaxLOD = FLT_MAX,
 	};

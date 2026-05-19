@@ -40,10 +40,14 @@ namespace d3d_service
 			return create_compute_shader(src, N, name);
 		}
 
-		static ComPtr<::ID3D11SamplerState> create_sampler_state(D3D11_FILTER filter, D3D11_TEXTURE_ADDRESS_MODE address_u, D3D11_TEXTURE_ADDRESS_MODE address_v);
-		static auto create_sampler_state(D3D11_FILTER filter, D3D11_TEXTURE_ADDRESS_MODE address)
+		static ComPtr<::ID3D11SamplerState> create_sampler_state(D3D11_FILTER filter, D3D11_TEXTURE_ADDRESS_MODE address_u, D3D11_TEXTURE_ADDRESS_MODE address_v, float const (&color)[4] = zero_color);
+		static auto create_sampler_state(D3D11_FILTER filter, D3D11_TEXTURE_ADDRESS_MODE address, float const (&color)[4] = zero_color)
 		{
-			return create_sampler_state(filter, address, address);
+			return create_sampler_state(filter, address, address, zero_color);
+		}
+		static auto create_sampler_state(D3D11_FILTER filter, float const (&color)[4] = zero_color)
+		{
+			return create_sampler_state(filter, D3D11_TEXTURE_ADDRESS_BORDER, color);
 		}
 
 		static ComPtr<::ID3D11Buffer> create_const_buffer(void const* data, size_t size);

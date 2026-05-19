@@ -305,13 +305,10 @@ SamplerState smp : register(s0);
 cbuffer constant0 : register(b0) {
 	uint2 size_src;
 	uint2 size_dst;
+	float4 rates;
 	uint span_i;
-	float base_rate, inv_span;
+	float inv_span;
 };
-static const float
-	med_core_init = base_rate * base_rate * base_rate,
-	dmed_core = med_core_init * base_rate,
-	ddwt = dmed_core * dmed_core;
 uint2 get_src_size()
 {
 	uint w, h;
@@ -325,23 +322,19 @@ void csmain(uint2 id : SV_DispatchThreadID)
 {
 	if (any(id >= size_dst)) return;
 
-	float sum = src.Load(int3(id.x - span_i, id.y, 0)),
-		wt1 = base_rate, dwt = ddwt, med_core = med_core_init,
-		base_x = float(id.x) - float(span_i);
-	for (uint x = 1; x < span_i; x += 2, wt1 *= dwt, dwt *= ddwt, med_core *= dmed_core) {
-		const float wt = wt1 * (1 + med_core), med = 1 / (1 + med_core);
-		const float src_x1 = base_x - x - (1 - med), src_x2 = base_x + x + (1 - med);
-		sum += src_x1 <= float(size_src.x - 1) ?
-				wt * src.SampleLevel(smp, (float2(src_x1, id.y) + 0.5) * inv_size_src, 0) :
-			src_x1 <= float(size_src.x) ? (wt - wt1) * src[uint2(size_src.x - 1, id.y)] : 0;
-		sum += src_x2 <= float(size_src.x - 1) ?
-				wt * src.SampleLevel(smp, (float2(src_x2, id.y) + 0.5) * inv_size_src, 0) :
-			src_x2 <= float(size_src.x) ? wt1 * src[uint2(size_src.x - 1, id.y)] : 0;
-	}
-	if (span_i % 2 != 0) {
-		const uint src_x1 = id.x - 2 * span_i, src_x2 = id.x;
-		sum += src_x1 <= size_src.x - 1 ? wt1 * src[uint2(src_x1, id.y)] : 0;
-		sum += src_x2 <= size_src.x - 1 ? wt1 * src[uint2(src_x2, id.y)] : 0;
+	const int base_x = id.x - span_i;
+	float sum = src.Load(int3(base_x, id.y, 0)),
+		dwt0 = 1, wt0 = rates[0], dwt01 = rates[1];
+	for (uint x = 1; x <= span_i; x += 2, dwt0 *= rates[3], wt0 *= dwt0, dwt01 *= rates[2]) {
+		if (x == span_i) dwt01 = 0;
+		const float wt1 = wt0 * dwt01, med = saturate(1 - rcp(1 + dwt01)), x_med = x + med;
+		const float src_l = base_x - x_med, src_r = base_x + x_med;
+		sum += src_l <= float(size_src.x - 1) ?
+			(wt0 + wt1) * src.SampleLevel(smp, (float2(src_l, id.y) + 0.5) * inv_size_src, 0) :
+			src_l <= float(size_src.x) ? wt1 * src[uint2(size_src.x - 1, id.y)] : 0;
+		sum += src_r <= float(size_src.x - 1) ?
+			(wt0 + wt1) * src.SampleLevel(smp, (float2(src_r, id.y) + 0.5) * inv_size_src, 0) :
+			src_r <= float(size_src.x) ? wt0 * src[uint2(size_src.x - 1, id.y)] : 0;
 	}
 
 	dst[id] = inv_span * sum;
@@ -354,13 +347,10 @@ SamplerState smp : register(s0);
 cbuffer constant0 : register(b0) {
 	uint2 size_src;
 	uint2 size_dst;
+	float4 rates;
 	uint span_i;
-	float base_rate, inv_span;
+	float inv_span;
 };
-static const float
-	med_core_init = base_rate * base_rate * base_rate,
-	dmed_core = med_core_init * base_rate,
-	ddwt = dmed_core * dmed_core;
 uint2 get_src_size()
 {
 	uint w, h;
@@ -374,23 +364,19 @@ void csmain(uint2 id : SV_DispatchThreadID)
 {
 	if (any(id >= size_dst)) return;
 
-	float sum = src.Load(int3(id.x, id.y - span_i, 0)),
-		wt1 = base_rate, dwt = ddwt, med_core = med_core_init,
-		base_y = float(id.y) - float(span_i);
-	for (uint y = 1; y < span_i; y += 2, wt1 *= dwt, dwt *= ddwt, med_core *= dmed_core) {
-		const float wt = wt1 * (1 + med_core), med = 1 / (1 + med_core);
-		const float src_y1 = base_y - y - (1 - med), src_y2 = base_y + y + (1 - med);
-		sum += src_y1 <= float(size_src.y - 1) ?
-				wt * src.SampleLevel(smp, (float2(id.x, src_y1) + 0.5) * inv_size_src, 0) :
-			src_y1 <= float(size_src.y) ? (wt - wt1) * src[uint2(id.x, size_src.y - 1)] : 0;
-		sum += src_y2 <= float(size_src.y - 1) ?
-				wt * src.SampleLevel(smp, (float2(id.x, src_y2) + 0.5) * inv_size_src, 0) :
-			src_y2 <= float(size_src.y) ? wt1 * src[uint2(id.x, size_src.y - 1)] : 0;
-	}
-	if (span_i % 2 != 0) {
-		const uint src_y1 = id.y - 2 * span_i, src_y2 = id.y;
-		sum += src_y1 <= size_src.y - 1 ? wt1 * src[uint2(id.x, src_y1)] : 0;
-		sum += src_y2 <= size_src.y - 1 ? wt1 * src[uint2(id.x, src_y2)] : 0;
+	const int base_y = id.y - span_i;
+	float sum = src.Load(int3(id.x, base_y, 0)),
+		dwt0 = 1, wt0 = rates[0], dwt01 = rates[1];
+	for (uint y = 1; y <= span_i; y += 2, dwt0 *= rates[3], wt0 *= dwt0, dwt01 *= rates[2]) {
+		if (y == span_i) dwt01 = 0;
+		const float wt1 = wt0 * dwt01, med = saturate(1 - rcp(1 + dwt01)), y_med = y + med;
+		const float src_t = base_y - y_med, src_b = base_y + y_med;
+		sum += src_t <= float(size_src.y - 1) ?
+			(wt0 + wt1) * src.SampleLevel(smp, (float2(id.x, src_t) + 0.5) * inv_size_src, 0) :
+			src_t <= float(size_src.y) ? wt1 * src[uint2(id.x, size_src.y - 1)] : 0;
+		sum += src_b <= float(size_src.y - 1) ?
+			(wt0 + wt1) * src.SampleLevel(smp, (float2(id.x, src_b) + 0.5) * inv_size_src, 0) :
+			src_b <= float(size_src.y) ? wt0 * src[uint2(id.x, size_src.y - 1)] : 0;
 	}
 
 	dst[id] = inv_span * sum;
@@ -399,10 +385,11 @@ void csmain(uint2 id : SV_DispatchThreadID)
 struct cs_cbuff_gauss_blur {
 	uint32_t size_src_x, size_src_y;
 	uint32_t size_dst_x, size_dst_y;
+	float rate1, rate3, rate4, rate8; // rate_k = exp(-k / (2 sigma^2))
 	uint32_t span_i;
-	float base_rate, inv_span; // base_rate = exp(-1 / (2 sigma^2))
+	float inv_span;
 
-	[[maybe_unused]] uint8_t _pad[4];
+	[[maybe_unused]] uint8_t _pad[8];
 };
 static_assert(sizeof(cs_cbuff_gauss_blur) % 16 == 0);
 
@@ -778,22 +765,28 @@ bool blur_gaussian(int width_src, int height_src,
 		D3D::create_const_buffer(cs_cbuff_gauss_blur{
 			.size_src_x = static_cast<uint32_t>(width_src), .size_src_y = static_cast<uint32_t>(height_src),
 			.size_dst_x = static_cast<uint32_t>(width_src + 2 * blur_half_xi), .size_dst_y = static_cast<uint32_t>(height_src),
+			.rate1 = static_cast<float>(std::exp(-0.5 * inv_vari_x)),
+			.rate3 = static_cast<float>(std::exp(-1.5 * inv_vari_x)),
+			.rate4 = static_cast<float>(std::exp(-2.0 * inv_vari_x)),
+			.rate8 = static_cast<float>(std::exp(-4.0 * inv_vari_x)),
 			.span_i = static_cast<uint32_t>(blur_half_xi),
-			.base_rate = static_cast<float>(std::exp(-0.5 * inv_vari_x)),
 			.inv_span = static_cast<float>(1 / wt_x),
 		}),
 		D3D::create_const_buffer(cs_cbuff_gauss_blur{
 			.size_src_x = static_cast<uint32_t>(width_src + 2 * blur_half_xi), .size_src_y = static_cast<uint32_t>(height_src),
 			.size_dst_x = static_cast<uint32_t>(width_src + 2 * blur_half_xi), .size_dst_y = static_cast<uint32_t>(height_src + 2 * blur_half_yi),
+			.rate1 = static_cast<float>(std::exp(-0.5 * inv_vari_y)),
+			.rate3 = static_cast<float>(std::exp(-1.5 * inv_vari_y)),
+			.rate4 = static_cast<float>(std::exp(-2.0 * inv_vari_y)),
+			.rate8 = static_cast<float>(std::exp(-4.0 * inv_vari_y)),
 			.span_i = static_cast<uint32_t>(blur_half_yi),
-			.base_rate = static_cast<float>(std::exp(-0.5 * inv_vari_y)),
 			.inv_span = static_cast<float>(1 / wt_y),
 		}),
 	};
 	if (cbuff[0] == nullptr || cbuff[1] == nullptr) return false;
 
 	// create sampler state.
-	auto smp = D3D::create_sampler_state(D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_BORDER);
+	auto smp = D3D::create_sampler_state(D3D11_FILTER_MIN_MAG_MIP_LINEAR);
 
 	// sequencially apply shaders.
 	D3D::cxt->CSSetShader(cs_gauss_blur_x.Get(), nullptr, 0);
@@ -855,7 +848,7 @@ bool ops::delta_move(
 	if (cbuff == nullptr) return false;
 
 	// create sampler state.
-	auto smp = D3D::create_sampler_state(D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_CLAMP);
+	auto smp = D3D::create_sampler_state(D3D11_FILTER_MIN_MAG_MIP_LINEAR);
 
 	// execute shader.
 	D3D::cxt->CSSetShader(cs_delta_move.Get(), nullptr, 0);
