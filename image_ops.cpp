@@ -402,6 +402,11 @@ uint2 get_src_size()
 	return uint2(w, h);
 }
 static const float2 inv_size_src = 1.0 / get_src_size();
+float pick(float2 pos)
+{
+	float mx = max(pos.x - size_src.x + 0.5, 0);
+	return max(1 - mx, 0) * src.SampleLevel(smp, float2(pos.x - mx, pos.y) * inv_size_src, 0);
+}
 
 [numthreads(8, 8, 1)]
 void csmain(uint2 id : SV_DispatchThreadID)
@@ -415,12 +420,7 @@ void csmain(uint2 id : SV_DispatchThreadID)
 		if (x == span_i) dwt01 = 0;
 		const float wt1 = wt0 * dwt01, med = saturate(1 - rcp(1 + dwt01)), x_med = x + med;
 		const float src_l = base_x - x_med, src_r = base_x + x_med;
-		sum += src_l <= float(size_src.x - 1) ?
-			(wt0 + wt1) * src.SampleLevel(smp, (float2(src_l, id.y) + 0.5) * inv_size_src, 0) :
-			src_l <= float(size_src.x) ? wt1 * src[uint2(size_src.x - 1, id.y)] : 0;
-		sum += src_r <= float(size_src.x - 1) ?
-			(wt0 + wt1) * src.SampleLevel(smp, (float2(src_r, id.y) + 0.5) * inv_size_src, 0) :
-			src_r <= float(size_src.x) ? wt0 * src[uint2(size_src.x - 1, id.y)] : 0;
+		sum += (wt0 + wt1) * (pick(float2(src_l, id.y) + 0.5) + pick(float2(src_r, id.y) + 0.5));
 	}
 
 	dst[id] = inv_span * sum;
@@ -444,6 +444,11 @@ uint2 get_src_size()
 	return uint2(w, h);
 }
 static const float2 inv_size_src = 1.0 / get_src_size();
+float pick(float2 pos)
+{
+	float my = max(pos.y - size_src.y + 0.5, 0);
+	return max(1 - my, 0) * src.SampleLevel(smp, float2(pos.x, pos.y - my) * inv_size_src, 0);
+}
 
 [numthreads(8, 8, 1)]
 void csmain(uint2 id : SV_DispatchThreadID)
@@ -457,12 +462,7 @@ void csmain(uint2 id : SV_DispatchThreadID)
 		if (y == span_i) dwt01 = 0;
 		const float wt1 = wt0 * dwt01, med = saturate(1 - rcp(1 + dwt01)), y_med = y + med;
 		const float src_t = base_y - y_med, src_b = base_y + y_med;
-		sum += src_t <= float(size_src.y - 1) ?
-			(wt0 + wt1) * src.SampleLevel(smp, (float2(id.x, src_t) + 0.5) * inv_size_src, 0) :
-			src_t <= float(size_src.y) ? wt1 * src[uint2(id.x, size_src.y - 1)] : 0;
-		sum += src_b <= float(size_src.y - 1) ?
-			(wt0 + wt1) * src.SampleLevel(smp, (float2(id.x, src_b) + 0.5) * inv_size_src, 0) :
-			src_b <= float(size_src.y) ? wt0 * src[uint2(id.x, size_src.y - 1)] : 0;
+		sum += (wt0 + wt1) * (pick(float2(id.x, src_t) + 0.5) + pick(float2(id.x, src_b) + 0.5));
 	}
 
 	dst[id] = inv_span * sum;
@@ -499,8 +499,10 @@ void csmain(uint2 id : SV_DispatchThreadID)
 {
 	if (any(id >= size_dst)) return;
 
-	const float2 pos_src = clamp(float2(id) + 0.5 - delta, 0, size_dst);
-	dst[id] = src.SampleLevel(smp, pos_src * inv_size_src, 0);
+	const float2
+		pos_src = float2(id) + 0.5 - delta,
+		m = max(pos_src - size_dst + 0.5, 0), im = max(1 - m, 0);
+	dst[id] = im.x * im.y * src.SampleLevel(smp, (pos_src - m) * inv_size_src, 0);
 }
 )";
 struct cs_cbuff_delta_move {
