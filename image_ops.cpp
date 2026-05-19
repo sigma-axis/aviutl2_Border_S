@@ -230,7 +230,7 @@ struct cs_cbuff_combine {
 };
 static_assert(sizeof(cs_cbuff_combine) % 16 == 0);
 
-constexpr char cs_src_blur_x[] = R"(
+constexpr char cs_src_blur_x1[] = R"(
 RWTexture2D<float> dst : register(u0);
 Texture2D<float> src : register(t0);
 cbuffer constant0 : register(b0) {
@@ -239,27 +239,35 @@ cbuffer constant0 : register(b0) {
 	uint span_i;
 	float span_f, inv_span;
 };
-[numthreads(8, 8, 1)]
+int quantize(float v)
+{
+	return int(round((1 << 16) * v));
+}
+[numthreads(1, 64, 1)]
 void csmain(uint2 id : SV_DispatchThreadID)
 {
-	if (any(id >= size_dst)) return;
+	if ((id >= size_dst).y) return;
 
-	float sum = 0, wt = span_f;
-	for (uint x = span_i; x > 0; x--, wt += 1) {
-		const uint src_x = id.x - x - span_i;
-		if (src_x < size_src.x)
-			sum += wt * src[uint2(src_x, id.y)];
+	// assumes size_src.x >= span_i + 1.
+	int sum = 0;
+	for (uint x = 0; x < span_i; x++) {
+		float a = src[uint2(x, id.y)];
+		dst[uint2(size_dst.x - 1 - x, id.y)] = inv_span * (sum + span_f * a);
+		sum += quantize(a);
 	}
-	for (x = 0; x <= span_i; x++, wt -= 1) {
-		const uint src_x = id.x + x - span_i;
-		if (src_x < size_src.x)
-			sum += wt * src[uint2(src_x, id.y)];
+	for (; x < size_src.x; x++) {
+		float a = src[uint2(x, id.y)], a0 = src[uint2(x - span_i, id.y)];
+		dst[uint2(size_dst.x - 1 - x, id.y)] = inv_span * (sum + span_f * a);
+		sum += quantize(a) - quantize(a0);
 	}
-
-	dst[id] = inv_span * sum;
+	for (; x < size_dst.x; x++) {
+		float a0 = src[uint2(x - span_i, id.y)];
+		dst[uint2(size_dst.x - 1 - x, id.y)] = inv_span * sum;
+		sum -= quantize(a0);
+	}
 }
 )";
-constexpr char cs_src_blur_y[] = R"(
+constexpr char cs_src_blur_x2[] = R"(
 RWTexture2D<float> dst : register(u0);
 Texture2D<float> src : register(t0);
 cbuffer constant0 : register(b0) {
@@ -268,24 +276,100 @@ cbuffer constant0 : register(b0) {
 	uint span_i;
 	float span_f, inv_span;
 };
-[numthreads(8, 8, 1)]
+int quantize(float v)
+{
+	return int(round((1 << 16) * v));
+}
+[numthreads(1, 64, 1)]
 void csmain(uint2 id : SV_DispatchThreadID)
 {
-	if (any(id >= size_dst)) return;
+	if ((id >= size_dst).y) return;
 
-	float sum = 0, wt = span_f;
-	for (uint y = span_i; y > 0; y--, wt += 1) {
-		const uint src_y = id.y - y - span_i;
-		if (src_y < size_src.y)
-			sum += wt * src[uint2(id.x, src_y)];
+	// assumes size_src.x <= span_i.
+	int sum = 0;
+	for (uint x = 0; x < size_src.x; x++) {
+		float a = src[uint2(x, id.y)];
+		dst[uint2(size_dst.x - 1 - x, id.y)] = inv_span * (sum + span_f * a);
+		sum += quantize(a);
 	}
-	for (y = 0; y <= span_i; y++, wt -= 1) {
-		const uint src_y = id.y + y - span_i;
-		if (src_y < size_src.y)
-			sum += wt * src[uint2(id.x, src_y)];
+	for (; x < span_i; x++)
+		dst[uint2(size_dst.x - 1 - x, id.y)] = inv_span * sum;
+	for (; x < size_dst.x; x++) {
+		float a0 = src[uint2(x - span_i, id.y)];
+		dst[uint2(size_dst.x - 1 - x, id.y)] = inv_span * sum;
+		sum -= quantize(a0);
 	}
+}
+)";
+constexpr char cs_src_blur_y1[] = R"(
+RWTexture2D<float> dst : register(u0);
+Texture2D<float> src : register(t0);
+cbuffer constant0 : register(b0) {
+	uint2 size_src;
+	uint2 size_dst;
+	uint span_i;
+	float span_f, inv_span;
+};
+int quantize(float v)
+{
+	return int(round((1 << 16) * v));
+}
+[numthreads(64, 1, 1)]
+void csmain(uint2 id : SV_DispatchThreadID)
+{
+	if ((id >= size_dst).x) return;
 
-	dst[id] = inv_span * sum;
+	// assumes size_src.y >= span_i + 1.
+	int sum = 0;
+	for (uint y = 0; y < span_i; y++) {
+		float a = src[uint2(id.x, y)];
+		dst[uint2(id.x, size_dst.y - 1 - y)] = inv_span * (sum + span_f * a);
+		sum += quantize(a);
+	}
+	for (; y < size_src.y; y++) {
+		float a = src[uint2(id.x, y)], a0 = src[uint2(id.x, y - span_i)];
+		dst[uint2(id.x, size_dst.y - 1 - y)] = inv_span * (sum + span_f * a);
+		sum += quantize(a) - quantize(a0);
+	}
+	for (; y < size_dst.y; y++) {
+		float a0 = src[uint2(id.x, y - span_i)];
+		dst[uint2(id.x, size_dst.y - 1 - y)] = inv_span * sum;
+		sum -= quantize(a0);
+	}
+}
+)";
+constexpr char cs_src_blur_y2[] = R"(
+RWTexture2D<float> dst : register(u0);
+Texture2D<float> src : register(t0);
+cbuffer constant0 : register(b0) {
+	uint2 size_src;
+	uint2 size_dst;
+	uint span_i;
+	float span_f, inv_span;
+};
+int quantize(float v)
+{
+	return int(round((1 << 16) * v));
+}
+[numthreads(64, 1, 1)]
+void csmain(uint2 id : SV_DispatchThreadID)
+{
+	if ((id >= size_dst).x) return;
+
+	// assumes size_src.y <= span_i.
+	int sum = 0;
+	for (uint y = 0; y < size_src.y; y++) {
+		float a = src[uint2(id.x, y)];
+		dst[uint2(id.x, size_dst.y - 1 - y)] = inv_span * (sum + span_f * a);
+		sum += quantize(a);
+	}
+	for (; y < span_i; y++)
+		dst[uint2(id.x, size_dst.y - 1 - y)] = inv_span * sum;
+	for (; y < size_dst.y; y++) {
+		float a0 = src[uint2(id.x, y - span_i)];
+		dst[uint2(id.x, size_dst.y - 1 - y)] = inv_span * sum;
+		sum -= quantize(a0);
+	}
 }
 )";
 struct cs_cbuff_blur {
@@ -295,6 +379,8 @@ struct cs_cbuff_blur {
 	float span_f, inv_span;
 
 	[[maybe_unused]] uint8_t _pad[4];
+
+	static constexpr uint32_t quantize_denom = 1 << 16;
 };
 static_assert(sizeof(cs_cbuff_blur) % 16 == 0);
 
@@ -431,7 +517,8 @@ constinit AviUtl2::finalizing::helpers::init_state init_state{};
 D3D::ComPtr<::ID3D11ComputeShader> cs_extract_alpha,
 	cs_draw, cs_recolor, cs_recolor_empty,
 	cs_carve, cs_carve_1, cs_combine,
-	cs_blur_x, cs_blur_y, cs_gauss_blur_x, cs_gauss_blur_y, cs_delta_move;
+	cs_blur_x1, cs_blur_x2, cs_blur_y1, cs_blur_y2,
+	cs_gauss_blur_x, cs_gauss_blur_y, cs_delta_move;
 void quit()
 {
 	cs_extract_alpha.Reset();
@@ -441,8 +528,10 @@ void quit()
 	cs_carve.Reset();
 	cs_carve_1.Reset();
 	cs_combine.Reset();
-	cs_blur_x.Reset();
-	cs_blur_y.Reset();
+	cs_blur_x1.Reset();
+	cs_blur_x2.Reset();
+	cs_blur_y1.Reset();
+	cs_blur_y2.Reset();
 	cs_gauss_blur_x.Reset();
 	cs_gauss_blur_y.Reset();
 	cs_delta_move.Reset();
@@ -463,8 +552,10 @@ bool init()
 			(cs_carve = D3D::create_compute_shader(cs_src(carve))) != nullptr &&
 			(cs_carve_1 = D3D::create_compute_shader(cs_src(carve_1))) != nullptr &&
 			(cs_combine = D3D::create_compute_shader(cs_src(combine))) != nullptr &&
-			(cs_blur_x = D3D::create_compute_shader(cs_src(blur_x))) != nullptr &&
-			(cs_blur_y = D3D::create_compute_shader(cs_src(blur_y))) != nullptr &&
+			(cs_blur_x1 = D3D::create_compute_shader(cs_src(blur_x1))) != nullptr &&
+			(cs_blur_x2 = D3D::create_compute_shader(cs_src(blur_x2))) != nullptr &&
+			(cs_blur_y1 = D3D::create_compute_shader(cs_src(blur_y1))) != nullptr &&
+			(cs_blur_y2 = D3D::create_compute_shader(cs_src(blur_y2))) != nullptr &&
 			(cs_gauss_blur_x = D3D::create_compute_shader(cs_src(gauss_blur_x))) != nullptr &&
 			(cs_gauss_blur_y = D3D::create_compute_shader(cs_src(gauss_blur_y))) != nullptr &&
 			(cs_delta_move = D3D::create_compute_shader(cs_src(delta_move))) != nullptr &&
@@ -699,39 +790,64 @@ bool blur_triangular(int width_src, int height_src,
 	D3D::ComPtr<::ID3D11Buffer> cbuff[] = {
 		D3D::create_const_buffer(cs_cbuff_blur{
 			.size_src_x = static_cast<uint32_t>(width_src), .size_src_y = static_cast<uint32_t>(height_src),
-			.size_dst_x = static_cast<uint32_t>(width_src + 2 * blur_half_xi), .size_dst_y = static_cast<uint32_t>(height_src),
-			.span_i = static_cast<uint32_t>(blur_half_xi),
-			.span_f = static_cast<float>(blur_xf),
-			.inv_span = static_cast<float>(1 / (blur_half_xi * blur_half_xi + blur_xf * (2 * blur_half_xi + 1))),
+			.size_dst_x = static_cast<uint32_t>(width_src), .size_dst_y = static_cast<uint32_t>(height_src + blur_half_yi),
+			.span_i = static_cast<uint32_t>(blur_half_yi),
+			.span_f = static_cast<float>(blur_yf * cs_cbuff_blur::quantize_denom),
+			.inv_span = static_cast<float>(1 / ((blur_half_yi + blur_yf) * cs_cbuff_blur::quantize_denom)),
 		}),
 		D3D::create_const_buffer(cs_cbuff_blur{
-			.size_src_x = static_cast<uint32_t>(width_src + 2 * blur_half_xi), .size_src_y = static_cast<uint32_t>(height_src),
-			.size_dst_x = static_cast<uint32_t>(width_src + 2 * blur_half_xi), .size_dst_y = static_cast<uint32_t>(height_src + 2 * blur_half_yi),
+			.size_src_x = static_cast<uint32_t>(width_src), .size_src_y = static_cast<uint32_t>(height_src + blur_half_yi),
+			.size_dst_x = static_cast<uint32_t>(width_src), .size_dst_y = static_cast<uint32_t>(height_src + 2 * blur_half_yi),
 			.span_i = static_cast<uint32_t>(blur_half_yi),
-			.span_f = static_cast<float>(blur_yf),
-			.inv_span = static_cast<float>(1 / (blur_half_yi * blur_half_yi + blur_yf * (2 * blur_half_yi + 1))),
+			.span_f = static_cast<float>(blur_yf * cs_cbuff_blur::quantize_denom),
+			.inv_span = static_cast<float>(1 / ((blur_half_yi + blur_yf) * cs_cbuff_blur::quantize_denom)),
+		}),
+		D3D::create_const_buffer(cs_cbuff_blur{
+			.size_src_x = static_cast<uint32_t>(width_src), .size_src_y = static_cast<uint32_t>(height_src + 2 * blur_half_yi),
+			.size_dst_x = static_cast<uint32_t>(width_src + blur_half_xi), .size_dst_y = static_cast<uint32_t>(height_src + 2 * blur_half_yi),
+			.span_i = static_cast<uint32_t>(blur_half_xi),
+			.span_f = static_cast<float>(blur_xf * cs_cbuff_blur::quantize_denom),
+			.inv_span = static_cast<float>(1 / ((blur_half_xi + blur_xf) * cs_cbuff_blur::quantize_denom)),
+		}),
+		D3D::create_const_buffer(cs_cbuff_blur{
+			.size_src_x = static_cast<uint32_t>(width_src + blur_half_xi), .size_src_y = static_cast<uint32_t>(height_src + 2 * blur_half_yi),
+			.size_dst_x = static_cast<uint32_t>(width_src + 2 * blur_half_xi), .size_dst_y = static_cast<uint32_t>(height_src + 2 * blur_half_yi),
+			.span_i = static_cast<uint32_t>(blur_half_xi),
+			.span_f = static_cast<float>(blur_xf * cs_cbuff_blur::quantize_denom),
+			.inv_span = static_cast<float>(1 / ((blur_half_xi + blur_xf) * cs_cbuff_blur::quantize_denom)),
 		}),
 	};
-	if (cbuff[0] == nullptr || cbuff[1] == nullptr) return false;
+	if (cbuff[0] == nullptr || cbuff[1] == nullptr ||
+		cbuff[2] == nullptr || cbuff[3] == nullptr) return false;
 
 	// sequencially apply shaders.
-	D3D::cxt->CSSetShader(cs_blur_x.Get(), nullptr, 0);
+	D3D::cxt->CSSetShader(height_src > blur_half_yi ? cs_blur_y1.Get() : cs_blur_y2.Get(), nullptr, 0);
 	D3D::cxt->CSSetShaderResources(0, 1, &src.srv);
 	D3D::cxt->CSSetUnorderedAccessViews(0, 1, &tmp.uav, nullptr);
 	D3D::cxt->CSSetConstantBuffers(0, 1, cbuff[0].GetAddressOf());
-	D3D::cxt->Dispatch(
-		((width_src + 2 * blur_half_xi) + ((1 << 3) - 1)) >> 3,
-		(height_src + ((1 << 3) - 1)) >> 3, 1);
+	D3D::cxt->Dispatch((width_src + ((1 << 6) - 1)) >> 6, 1, 1);
 
 	constexpr ::ID3D11UnorderedAccessView* uav_null = nullptr;
-	D3D::cxt->CSSetShader(cs_blur_y.Get(), nullptr, 0);
+	D3D::cxt->CSSetShader(cs_blur_y1.Get(), nullptr, 0);
 	D3D::cxt->CSSetUnorderedAccessViews(0, 1, &uav_null, nullptr);
 	D3D::cxt->CSSetShaderResources(0, 1, &tmp.srv);
 	D3D::cxt->CSSetUnorderedAccessViews(0, 1, &src.uav, nullptr);
 	D3D::cxt->CSSetConstantBuffers(0, 1, cbuff[1].GetAddressOf());
-	D3D::cxt->Dispatch(
-		((width_src + 2 * blur_half_xi) + ((1 << 3) - 1)) >> 3,
-		((height_src + 2 * blur_half_yi) + ((1 << 3) - 1)) >> 3, 1);
+	D3D::cxt->Dispatch((width_src + ((1 << 6) - 1)) >> 6, 1, 1);
+
+	D3D::cxt->CSSetShader(width_src > blur_half_xi ? cs_blur_x1.Get() : cs_blur_x2.Get(), nullptr, 0);
+	D3D::cxt->CSSetUnorderedAccessViews(0, 1, &uav_null, nullptr);
+	D3D::cxt->CSSetShaderResources(0, 1, &src.srv);
+	D3D::cxt->CSSetUnorderedAccessViews(0, 1, &tmp.uav, nullptr);
+	D3D::cxt->CSSetConstantBuffers(0, 1, cbuff[2].GetAddressOf());
+	D3D::cxt->Dispatch(1, ((height_src + 2 * blur_half_yi) + ((1 << 6) - 1)) >> 6, 1);
+
+	D3D::cxt->CSSetShader(cs_blur_x1.Get(), nullptr, 0);
+	D3D::cxt->CSSetUnorderedAccessViews(0, 1, &uav_null, nullptr);
+	D3D::cxt->CSSetShaderResources(0, 1, &tmp.srv);
+	D3D::cxt->CSSetUnorderedAccessViews(0, 1, &src.uav, nullptr);
+	D3D::cxt->CSSetConstantBuffers(0, 1, cbuff[3].GetAddressOf());
+	D3D::cxt->Dispatch(1, ((height_src + 2 * blur_half_yi) + ((1 << 6) - 1)) >> 6, 1);
 
 	// cleanup.
 	D3D::cxt->ClearState();
