@@ -230,6 +230,7 @@ struct cs_cbuff_combine {
 };
 static_assert(sizeof(cs_cbuff_combine) % 16 == 0);
 
+// assumes size_src.x >= span_i + 1.
 constexpr char cs_src_blur_x1[] = R"(
 RWTexture2D<float> dst : register(u0);
 Texture2D<float> src : register(t0);
@@ -248,7 +249,6 @@ void csmain(uint2 id : SV_DispatchThreadID)
 {
 	if ((id >= size_dst).y) return;
 
-	// assumes size_src.x >= span_i + 1.
 	int sum = 0;
 	for (uint x = 0; x < span_i; x++) {
 		float a = src[uint2(x, id.y)];
@@ -267,6 +267,7 @@ void csmain(uint2 id : SV_DispatchThreadID)
 	}
 }
 )";
+// assumes size_src.x <= span_i.
 constexpr char cs_src_blur_x2[] = R"(
 RWTexture2D<float> dst : register(u0);
 Texture2D<float> src : register(t0);
@@ -285,7 +286,6 @@ void csmain(uint2 id : SV_DispatchThreadID)
 {
 	if ((id >= size_dst).y) return;
 
-	// assumes size_src.x <= span_i.
 	int sum = 0;
 	for (uint x = 0; x < size_src.x; x++) {
 		float a = src[uint2(x, id.y)];
@@ -301,6 +301,7 @@ void csmain(uint2 id : SV_DispatchThreadID)
 	}
 }
 )";
+// assumes size_src.y >= span_i + 1.
 constexpr char cs_src_blur_y1[] = R"(
 RWTexture2D<float> dst : register(u0);
 Texture2D<float> src : register(t0);
@@ -319,7 +320,6 @@ void csmain(uint2 id : SV_DispatchThreadID)
 {
 	if ((id >= size_dst).x) return;
 
-	// assumes size_src.y >= span_i + 1.
 	int sum = 0;
 	for (uint y = 0; y < span_i; y++) {
 		float a = src[uint2(id.x, y)];
@@ -338,6 +338,7 @@ void csmain(uint2 id : SV_DispatchThreadID)
 	}
 }
 )";
+// assumes size_src.y <= span_i.
 constexpr char cs_src_blur_y2[] = R"(
 RWTexture2D<float> dst : register(u0);
 Texture2D<float> src : register(t0);
@@ -356,7 +357,6 @@ void csmain(uint2 id : SV_DispatchThreadID)
 {
 	if ((id >= size_dst).x) return;
 
-	// assumes size_src.y <= span_i.
 	int sum = 0;
 	for (uint y = 0; y < size_src.y; y++) {
 		float a = src[uint2(id.x, y)];
