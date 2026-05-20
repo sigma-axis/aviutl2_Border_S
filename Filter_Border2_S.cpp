@@ -126,10 +126,10 @@ bool filter_core(
 	case params::directions::inner:
 	{
 		auto const bx = (size >= 0 ? 1 : -1) * aspect_x * blur, by = (size >= 0 ? 1 : -1) * aspect_y * blur;
-		size_li = static_cast<int>(std::ceil(bx)) + static_cast<int>(std::ceil(-aspect_x * size - move_x));
-		size_ti = static_cast<int>(std::ceil(by)) + static_cast<int>(std::ceil(-aspect_y * size - move_y));
-		size_ri = static_cast<int>(std::ceil(bx)) + static_cast<int>(std::ceil(-aspect_x * size + move_x));
-		size_bi = static_cast<int>(std::ceil(by)) + static_cast<int>(std::ceil(-aspect_y * size + move_y));
+		size_li = static_cast<int>(std::ceil(2 * bx)) + static_cast<int>(std::ceil(-aspect_x * size - move_x));
+		size_ti = static_cast<int>(std::ceil(2 * by)) + static_cast<int>(std::ceil(-aspect_y * size - move_y));
+		size_ri = static_cast<int>(std::ceil(2 * bx)) + static_cast<int>(std::ceil(-aspect_x * size + move_x));
+		size_bi = static_cast<int>(std::ceil(2 * by)) + static_cast<int>(std::ceil(-aspect_y * size + move_y));
 		break;
 	}
 	}
