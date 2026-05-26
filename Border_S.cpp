@@ -40,8 +40,6 @@ constinit COMMON_PLUGIN_TABLE plugin_table = {
 	.name = PLUGIN_NAME,
 	.information = PLUGIN_INFO_FMT(PLUGIN_NAME, PLUGIN_VERSION, PLUGIN_AUTHOR),
 };
-#define LEAST_AVIUTL2_VER_STR	"version 2.0beta46"
-constexpr uint32_t least_aviutl2_ver_num = 2004600;
 
 ANON_NS_E
 
@@ -52,13 +50,13 @@ ANON_NS_E
 // least version (since AviUtl2 beta33).
 extern "C" __declspec(dllexport) DWORD RequiredVersion()
 {
-	return least_aviutl2_ver_num;
+	return AviUtl2::least_aviutl2_ver_num;
 }
 
 // least version (in case of AviUtl2 before beta33).
 extern "C" __declspec(dllexport) bool InitializePlugin(DWORD version)
 {
-	if (version >= least_aviutl2_ver_num) return true;
+	if (version >= AviUtl2::least_aviutl2_ver_num) return true;
 
 	AviUtl2::logging::error(L"Requires AviUtl ExEdit2 " LEAST_AVIUTL2_VER_STR L" or later!");
 	::MessageBoxW(nullptr,
