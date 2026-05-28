@@ -163,9 +163,9 @@ Although, usage documentations for this script / plugin in languages other than 
 | 基準位置 | 説明 |
 |:---:| :--- |
 | `元画像` | 元画像を基準とします． |
-| `縁取り` | 縁取り部分の位置を基準とします． |
+| `縁部分` | 縁取り部分の位置を基準とします． |
 
-初期値は `縁取り`.
+初期値は `縁部分`.
 
 ### 補間なし (パターン画像)
 

@@ -84,6 +84,11 @@ namespace Border_S::Filter::common
 			shape = 1,
 		};
 		constexpr static id clamp(int value) { return static_cast<id>(std::clamp(value, 0, 1)); }
+		constexpr static FILTER_ITEM_SELECT::ITEM items[] = {
+			{ L"元画像", source },
+			{ L"縁部分", shape },
+			{ nullptr, {} },
+		};
 	};
 
 	struct pattern_info {
