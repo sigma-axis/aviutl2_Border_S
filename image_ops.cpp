@@ -832,7 +832,7 @@ bool ops::draw(
 	if (cbuff == nullptr) return false;
 
 	// execute shader.
-	D3D::cxt->CSSetShader( pattern.is_color() ? cs_draw.Get() : cs_draw_pat.Get(), nullptr, 0);
+	D3D::cxt->CSSetShader(pattern.is_color() ? cs_draw.Get() : cs_draw_pat.Get(), nullptr, 0);
 	::ID3D11ShaderResourceView* const srv_draw[] = { srv_src, srv_shape, pattern.srv };
 	D3D::cxt->CSSetShaderResources(0, std::size(srv_draw), srv_draw);
 	D3D::cxt->CSSetUnorderedAccessViews(0, 1, &uav_dst, nullptr);
@@ -887,7 +887,8 @@ bool ops::recolor(
 
 		// execute shader.
 		D3D::cxt->CSSetShader(pattern.is_color() ? cs_recolor.Get() : cs_recolor_pat.Get(), nullptr, 0);
-		D3D::cxt->CSSetShaderResources(0, 1, &srv_shape);
+		::ID3D11ShaderResourceView* const srv_recolor[] = { srv_shape, pattern.srv };
+		D3D::cxt->CSSetShaderResources(0, std::size(srv_recolor), srv_recolor);
 		D3D::cxt->CSSetConstantBuffers(0, 1, cbuff.GetAddressOf());
 	}
 	else {
@@ -909,6 +910,8 @@ bool ops::recolor(
 
 		// execute shader.
 		D3D::cxt->CSSetShader(pattern.is_color() ? cs_recolor_empty.Get() : cs_recolor_empty_pat.Get(), nullptr, 0);
+		if (pattern.is_pattern())
+			D3D::cxt->CSSetShaderResources(0, 1, &pattern.srv);
 		D3D::cxt->CSSetConstantBuffers(0, 1, cbuff.GetAddressOf());
 	}
 
@@ -1001,15 +1004,15 @@ bool ops::combine(
 		.a_shape = static_cast<float>(alpha_shape),
 		.mat_move_pat = {
 			pattern,
-			width_src / 2.0 - offset_src_x + offset_shape_x,
-			height_src / 2.0 - offset_src_y + offset_shape_y,
+			width_src / 2.0 + offset_src_x,
+			height_src / 2.0 + offset_src_y,
 		},
 	});
 	if (cbuff == nullptr) return false;
 
 	// execute shader.
-	D3D::cxt->CSSetShader(cs_combine.Get(), nullptr, 0);
-	::ID3D11ShaderResourceView* const srv_combine[] = { srv_src, srv_shape };
+	D3D::cxt->CSSetShader(pattern.is_color() ? cs_combine.Get() : cs_combine_pat.Get(), nullptr, 0);
+	::ID3D11ShaderResourceView* const srv_combine[] = { srv_src, srv_shape, pattern.srv };
 	D3D::cxt->CSSetShaderResources(0, std::size(srv_combine), srv_combine);
 	D3D::cxt->CSSetUnorderedAccessViews(0, 1, &uav_dst, nullptr);
 	D3D::cxt->CSSetConstantBuffers(0, 1, cbuff.GetAddressOf());

@@ -12,12 +12,14 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 
 #include <cstdint>
 #include <cmath>
+#include <numbers>
 #include <algorithm>
 
 #include "d3d_service.hpp"
 using d3d_service::D3D;
 #include "image_ops.hpp"
 using Border_S::image_ops::color_float;
+using pattern_ops = Border_S::image_ops::pattern_info;
 using image_ops = Border_S::image_ops::ops;
 
 #include "Filters_Common.hpp"
@@ -66,6 +68,23 @@ namespace params
 	FILTER_ITEM_TRACK move_x{ L"移動X", 0.00, -1000.00, +1000.00, 0.01 };
 	FILTER_ITEM_TRACK move_y{ L"移動Y", 0.00, -1000.00, +1000.00, 0.01 };
 
+	FILTER_ITEM_GROUP group_pattern{ L"パターン画像", false };
+	using common::pattern_types;
+	FILTER_ITEM_SELECT pattern_type{ L"pattern::パターンの種類", pattern_types::none, const_cast<FILTER_ITEM_SELECT::ITEM*>(pattern_types::items) };
+	FILTER_ITEM_FILE pattern_file{ L"pattern::画像ファイル", L"", L"Image File (*.bmp;*.tga;*.jpg;*.png;*.*)\0*.bmp;*.tga;*.jpg;*.png;*.*\0" };
+	FILTER_ITEM_TRACK pattern_x{ L"pattern::移動X", 0.00, -4000.00, +4000.00, 0.01 };
+	FILTER_ITEM_TRACK pattern_y{ L"pattern::移動Y", 0.00, -4000.00, +4000.00, 0.01 };
+	FILTER_ITEM_TRACK pattern_rotate{ L"pattern::回転", 0.00, -720.00, +720.00, 0.01 };
+	FILTER_ITEM_TRACK pattern_scale{ L"pattern::拡大率", 100.00, 0.001, 10000.00, 0.001 };
+	using common::pattern_origins;
+	constexpr static FILTER_ITEM_SELECT::ITEM pattern_origins_items[] = {
+		{ L"元画像", pattern_origins::source },
+		{ L"アウトライン", pattern_origins::shape },
+		{ nullptr, {} },
+	};
+	FILTER_ITEM_SELECT pattern_origin{ L"pattern::基準位置", pattern_origins::shape, const_cast<FILTER_ITEM_SELECT::ITEM*>(pattern_origins_items) };
+	FILTER_ITEM_CHECK pattern_snap_to_pixel{ L"pattern::補間なし", false };
+
 	FILTER_ITEM_GROUP group_others{ L"その他", false };
 	FILTER_ITEM_TRACK dist_aspect{ L"距離縦横比", 0.000, -100.000, +100.000, 0.001 };
 	FILTER_ITEM_TRACK pos_radius{ L"凸半径", 0.00, 0.00, 500.00, 0.01 };
@@ -108,6 +127,16 @@ namespace params
 		&group_move,
 		&move_x,
 		&move_y,
+
+		&group_pattern,
+		&pattern_type,
+		&pattern_file,
+		&pattern_x,
+		&pattern_y,
+		&pattern_rotate,
+		&pattern_scale,
+		&pattern_origin,
+		&pattern_snap_to_pixel,
 
 		&group_others,
 		&dist_aspect,
@@ -168,6 +197,7 @@ bool filter_core(
 	params::methods::id method, double a_param,
 	params::compositions::id composition, double alpha_border, double alpha_inner, double alpha_source,
 	color_float const& color, params::directions::id direction, params::blur_spec::id blur_type,
+	common::pattern_info&& pattern,
 	FILTER_PROC_VIDEO* video)
 {
 	// determine the input and output dimensions.
@@ -343,6 +373,25 @@ bool filter_core(
 			srv_shape.Swap(srv_hole);
 		}
 	}
+	// prepare pattern.
+	D3D::ComPtr<::ID3D11ShaderResourceView> srv_pat = nullptr;
+	pattern_ops pat_ops;
+	if (pattern.has_pattern()) {
+		srv_pat = D3D::to_shader_resource_view(pattern.texture);
+		if (srv_pat == nullptr) return false;
+		pattern.move_to_shape(move_x, move_y);
+		pat_ops = {
+			.srv = srv_pat.Get(),
+			.width = static_cast<int>(pattern.width),
+			.height = static_cast<int>(pattern.height),
+			.scale = pattern.scale,
+			.rotate = pattern.rotate,
+			.pos_x = pattern.pos_x,
+			.pos_y = pattern.pos_y,
+			.snap_to_pixel = pattern.snap_to_pixel,
+		};
+	}
+	else pat_ops = { .solid = color };
 
 	// combine with the original image.
 	if (alpha_source > 0) {
@@ -364,7 +413,7 @@ bool filter_core(
 			diff_li - size_li, diff_ti - size_ti,
 			srv_src_obj.Get(), srv_shape.Get(),
 			uav_obj.Get(),
-			{ .solid = color }, alpha_source, alpha_border,
+			pat_ops, alpha_source, alpha_border,
 			composition == params::compositions::background)) return false;
 
 		// adjust center.
@@ -387,6 +436,12 @@ bool filter_core(
 			static_cast<float>(alpha_border * color.a),
 		};
 		D3D::cxt->ClearUnorderedAccessViewFloat(uav_obj.Get(), col);
+		if (pattern.has_pattern()){
+			pat_ops.pos_x += (size_li - size_ri) / 2.0f;
+			pat_ops.pos_y += (size_ti - size_bi) / 2.0f;
+			if (!image_ops::recolor(0, 0, width_dst, height_dst, 0, 0,
+				nullptr, uav_obj.Get(), pat_ops, true, 1, 0)) return false;
+		}
 		if (!image_ops::carve(width_dst, height_dst, width_dst, height_dst, 0, 0,
 			srv_shape.Get(), uav_obj.Get(), 1, false)) return false;
 
@@ -418,6 +473,11 @@ bool filter(FILTER_PROC_VIDEO* video)
 		move_x = std::clamp(params::move_x.value, params::move_x.s, params::move_x.e),
 		move_y = std::clamp(params::move_y.value, params::move_y.s, params::move_y.e),
 
+		pattern_x = std::clamp(params::pattern_x.value, params::pattern_x.s, params::pattern_x.e),
+		pattern_y = std::clamp(params::pattern_y.value, params::pattern_y.s, params::pattern_y.e),
+		pattern_rotate = std::fmod(std::clamp(params::pattern_rotate.value, params::pattern_rotate.s, params::pattern_rotate.e), 360) * std::numbers::pi / 180,
+		pattern_scale = std::clamp(params::pattern_scale.value, params::pattern_scale.s, params::pattern_scale.e) / 100,
+
 		dist_aspect = std::clamp(params::dist_aspect.value, params::dist_aspect.s, params::dist_aspect.e) / 100,
 		dist_sup_ell_expo = common::conv_sup_ell_expo(
 			std::clamp(params::dist_sup_ell_expo.value, params::dist_sup_ell_expo.s, params::dist_sup_ell_expo.e) / 100),
@@ -431,6 +491,10 @@ bool filter(FILTER_PROC_VIDEO* video)
 	auto const direction = params::directions::clamp(params::direction.value);
 	auto const blur_type = params::blur_spec::clamp(params::blur_type.value);
 	auto const color = color_float::from_rgb(params::color.value.code & 0xffffff);
+	auto const pattern_type = params::pattern_types::clamp(params::pattern_type.value);
+	auto const pattern_file = params::pattern_file.value;
+	auto const pattern_origin = params::pattern_origins::clamp(params::pattern_origin.value);
+	auto const snap_to_pixel = params::pattern_snap_to_pixel.value;
 
 	// further calculations.
 	double const
@@ -484,7 +548,12 @@ bool filter(FILTER_PROC_VIDEO* video)
 		method, a_param,
 		composition, alpha_border2, alpha_inner, alpha_source,
 		color, direction, blur_type,
-		video);
+		{
+			pattern_type, pattern_file,
+			pattern_scale, pattern_rotate, pattern_x, pattern_y,
+			snap_to_pixel, pattern_origin,
+			video,
+		}, video);
 }
 ANON_NS_E
 
