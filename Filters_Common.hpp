@@ -76,6 +76,9 @@ namespace Border_S::Filter::common
 			{ L"仮想バッファ", tempbuffer },
 			{ nullptr, {} },
 		};
+
+		constexpr static wchar_t const file_filter[]
+			= L"Image File (*.bmp;*.tga;*.jpg;*.png;*.*)\0*.bmp;*.tga;*.jpg;*.png;*.*\0";
 	};
 
 	struct pattern_origins {
@@ -95,8 +98,9 @@ namespace Border_S::Filter::common
 		::ID3D11Texture2D* texture = nullptr;
 		uint32_t width = 0, height = 0;
 		double scale = 1, rotate = 0, pos_x = 0, pos_y = 0;
-		bool snap_to_pixel = false;
 		pattern_origins::id origin = pattern_origins::source;
+		bool snap_to_pixel = false;
+		bool failure = false;
 		constexpr bool has_pattern() const { return texture != nullptr; }
 		constexpr void move_to_shape(double dx, double dy)
 		{

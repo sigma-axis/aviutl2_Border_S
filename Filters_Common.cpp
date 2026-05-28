@@ -108,6 +108,8 @@ common::pattern_info::pattern_info(pattern_types::id type, wchar_t const* file_p
 		auto const sz = D3D::get_size(texture);
 		width = sz.width; height = sz.height;
 	}
+
+	failure = (type != pattern_types::none) && (texture == nullptr);
 }
 
 bool common::push_alpha(double alpha, FILTER_PROC_VIDEO* video)

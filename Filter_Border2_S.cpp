@@ -69,7 +69,7 @@ namespace params
 	FILTER_ITEM_GROUP group_pattern{ L"パターン画像", false };
 	using common::pattern_types;
 	FILTER_ITEM_SELECT pattern_type{ L"pattern::パターンの種類", pattern_types::none, const_cast<FILTER_ITEM_SELECT::ITEM*>(pattern_types::items) };
-	FILTER_ITEM_FILE pattern_file{ L"pattern::画像ファイル", L"", L"Image File (*.bmp;*.tga;*.jpg;*.png;*.*)\0*.bmp;*.tga;*.jpg;*.png;*.*\0" };
+	FILTER_ITEM_FILE pattern_file{ L"pattern::画像ファイル", L"", pattern_types::file_filter };
 	FILTER_ITEM_TRACK pattern_x{ L"pattern::移動X", 0.00, -4000.00, +4000.00, 0.01, nullptr, 0.25 };
 	FILTER_ITEM_TRACK pattern_y{ L"pattern::移動Y", 0.00, -4000.00, +4000.00, 0.01, nullptr, 0.25 };
 	FILTER_ITEM_TRACK pattern_rotate{ L"pattern::回転", 0.00, -1440.00, +1440.00, 0.01, nullptr, 0.25 };
@@ -136,6 +136,8 @@ bool filter_core(
 	common::pattern_info&& pattern,
 	FILTER_PROC_VIDEO* video)
 {
+	if (pattern.failure) return false;
+
 	// determine the input and output dimensions.
 	int const width_src = video->object->width, height_src = video->object->height;
 	int size_li, size_ti, size_ri, size_bi;
