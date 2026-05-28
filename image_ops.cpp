@@ -20,14 +20,41 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 using D3D = d3d_service::D3D;
 
 #include "image_ops.hpp"
-using color_float = Border_S::image_ops::color_float;
-using ops = Border_S::image_ops::ops;
+using Border_S::image_ops::color_float;
+using Border_S::image_ops::pattern_info;
+using Border_S::image_ops::ops;
 
 #define ANON_NS_B namespace {
 #define ANON_NS_E }
 
 
 ANON_NS_B;
+////////////////////////////////
+// structures for shaders.
+////////////////////////////////
+struct mat2x2_move_float {
+	float a11 = 0, a21 = 0;
+	[[maybe_unused]] float _pad31 = 0, _pad32 = 0;
+	float a12 = 0, a22 = 0;
+	float x = 0, y = 0;
+
+	constexpr mat2x2_move_float() = default;
+	constexpr mat2x2_move_float(pattern_info const& pattern, double center_src_x, double center_src_y)
+	{
+		double const
+			c = std::cos(-pattern.rotate) / pattern.scale,
+			s = std::sin(-pattern.rotate) / pattern.scale;
+		a11 = static_cast<float>(c / pattern.width); a12 = -static_cast<float>(s / pattern.width);
+		a21 = static_cast<float>(s / pattern.height); a22 = static_cast<float>(c / pattern.height);
+
+		double const
+			pre_x = -(center_src_x + pattern.pos_x),
+			pre_y = -(center_src_y + pattern.pos_y);
+		x = static_cast<float>((c * pre_x - s * pre_y) / pattern.width + 0.5);
+		y = static_cast<float>((s * pre_x + c * pre_y) / pattern.height + 0.5);
+	}
+};
+
 ////////////////////////////////
 // shaders.
 ////////////////////////////////
@@ -85,6 +112,41 @@ struct cs_cbuff_draw {
 };
 static_assert(sizeof(cs_cbuff_draw) % 16 == 0);
 
+constexpr char cs_src_draw_pat[] = R"(
+RWTexture2D<half4> dst : register(u0);
+Texture2D<half4> src : register(t0);
+Texture2D<float> shape : register(t1);
+Texture2D<half4> pat : register(t2);
+SamplerState smp : register(s0);
+cbuffer constant0 : register(b0) {
+	uint2 size_src;
+	uint2 size_dst;
+	int2 offset;
+	float a_front, a_back;
+	float2x2 mat_pat;
+	float2 offset_pat;
+};
+[numthreads(8, 8, 1)]
+void csmain(uint2 id : SV_DispatchThreadID)
+{
+	if (any(id >= size_dst)) return;
+
+	const uint2 pos_src = id - uint2(offset);
+	const float4 col = all(pos_src < size_src) ? src[pos_src] : 0,
+		bak = pat.SampleGrad(smp, mul(mat_pat, id + (0.5 - 1 / 4096.0)) + offset_pat,
+			mat_pat._11_21, mat_pat._12_22);
+	dst[id] = a_front * col + (1 - col.a) * a_back * shape[id] * bak;
+}
+)";
+struct cs_cbuff_draw_pat {
+	uint32_t size_src_x, size_src_y;
+	uint32_t size_dst_x, size_dst_y;
+	int32_t offset_x, offset_y;
+	float a_front, a_back;
+	mat2x2_move_float mat_move_pat;
+};
+static_assert(sizeof(cs_cbuff_draw_pat) % 16 == 0);
+
 constexpr char cs_src_recolor[] = R"(
 RWTexture2D<half4> dst : register(u0);
 Texture2D<float> shape : register(t0);
@@ -120,6 +182,46 @@ struct cs_cbuff_recolor {
 };
 static_assert(sizeof(cs_cbuff_recolor) % 16 == 0);
 
+constexpr char cs_src_recolor_pat[] = R"(
+RWTexture2D<half4> dst : register(u0);
+Texture2D<float> shape : register(t0);
+Texture2D<half4> pat : register(t1);
+SamplerState smp : register(s0);
+cbuffer constant0 : register(b0) {
+	uint2 size_shape;
+	uint2 size_dst;
+	int2 offset;
+	float a_front, a_back;
+	float2x2 mat_pat;
+	float2 offset_pat;
+	float alpha_base;
+};
+[numthreads(8, 8, 1)]
+void csmain(uint2 id : SV_DispatchThreadID)
+{
+	if (any(id >= size_dst)) return;
+
+	const uint2 pos_shape = id - uint2(offset);
+	const float alpha = a_front * abs((all(pos_shape < size_shape) ?
+		shape[pos_shape] : 0) - alpha_base);
+	const float4 col = dst[id],
+		over = pat.SampleGrad(smp, mul(mat_pat, id + (0.5 - 1 / 4096.0)) + offset_pat,
+			mat_pat._11_21, mat_pat._12_22);
+	dst[id] = col.a * alpha * over + (1 - alpha * over.a) * a_back * col;
+}
+)";
+struct cs_cbuff_recolor_pat {
+	uint32_t size_shape_x, size_shape_y;
+	uint32_t size_dst_x, size_dst_y;
+	int32_t offset_x, offset_y;
+	float a_front, a_back;
+	mat2x2_move_float mat_move_pat;
+	float alpha_base;
+
+	[[maybe_unused]] uint8_t _pad[12];
+};
+static_assert(sizeof(cs_cbuff_recolor_pat) % 16 == 0);
+
 constexpr char cs_src_recolor_empty[] = R"(
 RWTexture2D<half4> dst : register(u0);
 cbuffer constant0 : register(b0) {
@@ -142,6 +244,41 @@ struct cs_cbuff_recolor_emtpy {
 	float a_front, a_back;
 };
 static_assert(sizeof(cs_cbuff_recolor_emtpy) % 16 == 0);
+
+constexpr char cs_src_recolor_empty_pat[] = R"(
+RWTexture2D<half4> dst : register(u0);
+Texture2D<half4> pat : register(t0);
+SamplerState smp : register(s0);
+cbuffer constant0 : register(b0) {
+	uint2 size_dst;
+	float a_front, a_back;
+	float2x2 mat_pat;
+	float2 offset_pat;
+};
+uint2 get_pat_size()
+{
+	uint w, h;
+	pat.GetDimensions(w, h);
+	return uint2(w, h);
+}
+static const float2 inv_size_pat = 1.0 / get_pat_size();
+[numthreads(8, 8, 1)]
+void csmain(uint2 id : SV_DispatchThreadID)
+{
+	if (any(id >= size_dst)) return;
+
+	const float4 col = dst[id],
+		over = pat.SampleGrad(smp, mul(mat_pat, id + (0.5 - 1 / 4096.0)) + offset_pat,
+			mat_pat._11_21, mat_pat._12_22);
+	dst[id] = col.a * a_front * over + (1 - a_front * over.a) * a_back * col;
+}
+)";
+struct cs_cbuff_recolor_emtpy_pat {
+	uint32_t size_dst_x, size_dst_y;
+	float a_front, a_back;
+	mat2x2_move_float mat_move_pat;
+};
+static_assert(sizeof(cs_cbuff_recolor_emtpy_pat) % 16 == 0);
 
 constexpr char cs_src_carve[] = R"(
 RWTexture2D<half4> dst : register(u0);
@@ -229,6 +366,60 @@ struct cs_cbuff_combine {
 	[[maybe_unused]] uint8_t _pad[8];
 };
 static_assert(sizeof(cs_cbuff_combine) % 16 == 0);
+
+constexpr char cs_src_combine_pat[] = R"(
+RWTexture2D<half4> dst : register(u0);
+Texture2D<half4> src : register(t0);
+Texture2D<float> shape : register(t1);
+Texture2D<half4> pat : register(t2);
+SamplerState smp : register(s0);
+cbuffer constant0 : register(b0) {
+	uint2 size_src, size_shape;
+	uint2 size_dst;
+	bool is_src_front;
+	int2 offset_src, offset_shape;
+	float a_src, a_shape;
+	float2x2 mat_pat;
+	float2 offset_pat;
+};
+uint2 get_pat_size()
+{
+	uint w, h;
+	pat.GetDimensions(w, h);
+	return uint2(w, h);
+}
+static const float2 inv_size_pat = 1.0 / get_pat_size();
+[numthreads(8, 8, 1)]
+void csmain(uint2 id : SV_DispatchThreadID)
+{
+	if (any(id >= size_dst)) return;
+
+	const uint2 pos_src = id - uint2(offset_src);
+	const uint2 pos_shape = id - uint2(offset_shape);
+	float4 col_f = a_src * (all(pos_src < size_src) ? src[pos_src] : 0);
+	float4 col_b = a_shape * (all(pos_shape < size_shape) ? shape[pos_shape] : 0)
+		* pat.SampleGrad(smp, mul(mat_pat, id + (0.5 - 1 / 4096.0)) + offset_pat,
+			mat_pat._11_21, mat_pat._12_22);
+	if (!is_src_front) {
+		float4 c = col_f; col_f = col_b; col_b = c;
+	}
+	dst[id] = col_f + (1 - col_f.a) * col_b;
+}
+)";
+struct cs_cbuff_combine_pat {
+	uint32_t size_src_x, size_src_y;
+	uint32_t size_shape_x, size_shape_y;
+	uint32_t size_dst_x, size_dst_y;
+	bool is_src_front; [[maybe_unused]] uint8_t _pad7[7];
+	int32_t offset_src_x, offset_src_y;
+	int32_t offset_shape_x, offset_shape_y;
+	float a_src, a_shape;
+
+	[[maybe_unused]] uint8_t _pad[8];
+
+	mat2x2_move_float mat_move_pat;
+};
+static_assert(sizeof(cs_cbuff_combine_pat) % 16 == 0);
 
 // assumes size_src.x >= span_i + 1.
 constexpr char cs_src_blur_x1[] = R"(
@@ -517,19 +708,23 @@ static_assert(sizeof(cs_cbuff_delta_move) % 16 == 0);
 ////////////////////////////////
 constinit AviUtl2::finalizing::helpers::init_state init_state{};
 D3D::ComPtr<::ID3D11ComputeShader> cs_extract_alpha,
-	cs_draw, cs_recolor, cs_recolor_empty,
-	cs_carve, cs_carve_1, cs_combine,
+	cs_draw, cs_draw_pat, cs_recolor, cs_recolor_pat, cs_recolor_empty, cs_recolor_empty_pat,
+	cs_carve, cs_carve_1, cs_combine, cs_combine_pat,
 	cs_blur_x1, cs_blur_x2, cs_blur_y1, cs_blur_y2,
 	cs_gauss_blur_x, cs_gauss_blur_y, cs_delta_move;
 void quit()
 {
 	cs_extract_alpha.Reset();
 	cs_draw.Reset();
+	cs_draw_pat.Reset();
 	cs_recolor.Reset();
+	cs_recolor_pat.Reset();
 	cs_recolor_empty.Reset();
+	cs_recolor_empty_pat.Reset();
 	cs_carve.Reset();
 	cs_carve_1.Reset();
 	cs_combine.Reset();
+	cs_combine_pat.Reset();
 	cs_blur_x1.Reset();
 	cs_blur_x2.Reset();
 	cs_blur_y1.Reset();
@@ -549,11 +744,15 @@ bool init()
 		#define cs_src(name)	cs_src_##name, "image_ops::cs_" #name
 			(cs_extract_alpha = D3D::create_compute_shader(cs_src(extract_alpha))) != nullptr &&
 			(cs_draw = D3D::create_compute_shader(cs_src(draw))) != nullptr &&
+			(cs_draw_pat = D3D::create_compute_shader(cs_src(draw_pat))) != nullptr &&
 			(cs_recolor = D3D::create_compute_shader(cs_src(recolor))) != nullptr &&
+			(cs_recolor_pat = D3D::create_compute_shader(cs_src(recolor_pat))) != nullptr &&
 			(cs_recolor_empty = D3D::create_compute_shader(cs_src(recolor_empty))) != nullptr &&
+			(cs_recolor_empty_pat = D3D::create_compute_shader(cs_src(recolor_empty_pat))) != nullptr &&
 			(cs_carve = D3D::create_compute_shader(cs_src(carve))) != nullptr &&
 			(cs_carve_1 = D3D::create_compute_shader(cs_src(carve_1))) != nullptr &&
 			(cs_combine = D3D::create_compute_shader(cs_src(combine))) != nullptr &&
+			(cs_combine_pat = D3D::create_compute_shader(cs_src(combine_pat))) != nullptr &&
 			(cs_blur_x1 = D3D::create_compute_shader(cs_src(blur_x1))) != nullptr &&
 			(cs_blur_x2 = D3D::create_compute_shader(cs_src(blur_x2))) != nullptr &&
 			(cs_blur_y1 = D3D::create_compute_shader(cs_src(blur_y1))) != nullptr &&
@@ -609,28 +808,42 @@ bool ops::draw(
 	int offset_x, int offset_y,
 	::ID3D11ShaderResourceView* srv_src,
 	::ID3D11ShaderResourceView* srv_shape, ::ID3D11UnorderedAccessView* uav_dst,
-	color_float const& color,
+	pattern_info const& pattern,
 	double alpha_front, double alpha_back)
 {
 	if (!init()) return false;
 
 	// create constant buffer.
-	auto cbuff = D3D::create_const_buffer(cs_cbuff_draw{
+	auto cbuff = pattern.is_color() ? D3D::create_const_buffer(cs_cbuff_draw{
 		.size_src_x = static_cast<uint32_t>(width_src), .size_src_y = static_cast<uint32_t>(height_src),
 		.size_dst_x = static_cast<uint32_t>(width_dst), .size_dst_y = static_cast<uint32_t>(height_dst),
-		.color = color,
+		.color = pattern.solid,
 		.offset_x = offset_x, .offset_y = offset_y,
 		.a_front = static_cast<float>(alpha_front),
 		.a_back = static_cast<float>(alpha_back),
+	}) : D3D::create_const_buffer(cs_cbuff_draw_pat{
+		.size_src_x = static_cast<uint32_t>(width_src), .size_src_y = static_cast<uint32_t>(height_src),
+		.size_dst_x = static_cast<uint32_t>(width_dst), .size_dst_y = static_cast<uint32_t>(height_dst),
+		.offset_x = offset_x, .offset_y = offset_y,
+		.a_front = static_cast<float>(alpha_front),
+		.a_back = static_cast<float>(alpha_back),
+		.mat_move_pat = { pattern, width_src / 2.0 + offset_x, height_src / 2.0 + offset_y },
 	});
 	if (cbuff == nullptr) return false;
 
 	// execute shader.
-	D3D::cxt->CSSetShader(cs_draw.Get(), nullptr, 0);
-	::ID3D11ShaderResourceView* const srv_draw[] = { srv_src, srv_shape };
+	D3D::cxt->CSSetShader( pattern.is_color() ? cs_draw.Get() : cs_draw_pat.Get(), nullptr, 0);
+	::ID3D11ShaderResourceView* const srv_draw[] = { srv_src, srv_shape, pattern.srv };
 	D3D::cxt->CSSetShaderResources(0, std::size(srv_draw), srv_draw);
 	D3D::cxt->CSSetUnorderedAccessViews(0, 1, &uav_dst, nullptr);
 	D3D::cxt->CSSetConstantBuffers(0, 1, cbuff.GetAddressOf());
+	if (pattern.is_pattern()) {
+		auto smp = D3D::create_sampler_state(
+			pattern.snap_to_pixel ? D3D11_FILTER_MIN_MAG_MIP_POINT : D3D11_FILTER_MIN_MAG_MIP_LINEAR,
+			D3D11_TEXTURE_ADDRESS_WRAP);
+		if (smp == nullptr) return false;
+		D3D::cxt->CSSetSamplers(0, 1, smp.GetAddressOf());
+	}
 	D3D::cxt->Dispatch(
 		(width_dst + ((1 << 3) - 1)) >> 3,
 		(height_dst + ((1 << 3) - 1)) >> 3, 1);
@@ -646,26 +859,34 @@ bool ops::recolor(
 	int width_dst, int height_dst,
 	int offset_x, int offset_y,
 	::ID3D11ShaderResourceView* srv_shape, ::ID3D11UnorderedAccessView* uav_dst,
-	color_float const& color, bool invert,
+	pattern_info const& pattern, bool invert,
 	double alpha_front, double alpha_back)
 {
 	if (!init()) return false;
 
 	if (width_shape > 0 && height_shape > 0 && srv_shape != nullptr) {
 		// create constant buffer.
-		auto cbuff = D3D::create_const_buffer(cs_cbuff_recolor{
+		auto cbuff = pattern.is_color() ? D3D::create_const_buffer(cs_cbuff_recolor{
 			.size_shape_x = static_cast<uint32_t>(width_shape), .size_shape_y = static_cast<uint32_t>(height_shape),
 			.size_dst_x = static_cast<uint32_t>(width_dst), .size_dst_y = static_cast<uint32_t>(height_dst),
-			.color = color,
+			.color = pattern.solid,
 			.offset_x = offset_x, .offset_y = offset_y,
 			.a_front = static_cast<float>(alpha_front),
 			.a_back = static_cast<float>(alpha_back),
+			.alpha_base = invert ? 1.0f : 0.0f,
+		}) : D3D::create_const_buffer(cs_cbuff_recolor_pat{
+			.size_shape_x = static_cast<uint32_t>(width_shape), .size_shape_y = static_cast<uint32_t>(height_shape),
+			.size_dst_x = static_cast<uint32_t>(width_dst), .size_dst_y = static_cast<uint32_t>(height_dst),
+			.offset_x = offset_x, .offset_y = offset_y,
+			.a_front = static_cast<float>(alpha_front),
+			.a_back = static_cast<float>(alpha_back),
+			.mat_move_pat = { pattern, width_dst / 2.0, height_dst / 2.0 },
 			.alpha_base = invert ? 1.0f : 0.0f,
 		});
 		if (cbuff == nullptr) return false;
 
 		// execute shader.
-		D3D::cxt->CSSetShader(cs_recolor.Get(), nullptr, 0);
+		D3D::cxt->CSSetShader(pattern.is_color() ? cs_recolor.Get() : cs_recolor_pat.Get(), nullptr, 0);
 		D3D::cxt->CSSetShaderResources(0, 1, &srv_shape);
 		D3D::cxt->CSSetConstantBuffers(0, 1, cbuff.GetAddressOf());
 	}
@@ -673,20 +894,32 @@ bool ops::recolor(
 		// shape is recognized as empty.
 
 		// create constant buffer.
-		auto cbuff = D3D::create_const_buffer(cs_cbuff_recolor_emtpy{
-			.color = color,
+		auto cbuff = pattern.is_color() ? D3D::create_const_buffer(cs_cbuff_recolor_emtpy{
+			.color = pattern.solid,
 			.size_dst_x = static_cast<uint32_t>(width_dst), .size_dst_y = static_cast<uint32_t>(height_dst),
 			.a_front = invert ? static_cast<float>(alpha_front) : 0,
 			.a_back = static_cast<float>(alpha_back),
+		}) : D3D::create_const_buffer(cs_cbuff_recolor_emtpy_pat{
+			.size_dst_x = static_cast<uint32_t>(width_dst), .size_dst_y = static_cast<uint32_t>(height_dst),
+			.a_front = invert ? static_cast<float>(alpha_front) : 0,
+			.a_back = static_cast<float>(alpha_back),
+			.mat_move_pat = { pattern, width_dst / 2.0, height_dst / 2.0 },
 		});
 		if (cbuff == nullptr) return false;
 
 		// execute shader.
-		D3D::cxt->CSSetShader(cs_recolor_empty.Get(), nullptr, 0);
+		D3D::cxt->CSSetShader(pattern.is_color() ? cs_recolor_empty.Get() : cs_recolor_empty_pat.Get(), nullptr, 0);
 		D3D::cxt->CSSetConstantBuffers(0, 1, cbuff.GetAddressOf());
 	}
 
 	D3D::cxt->CSSetUnorderedAccessViews(0, 1, &uav_dst, nullptr);
+	if (pattern.is_pattern()) {
+		auto smp = D3D::create_sampler_state(
+			pattern.snap_to_pixel ? D3D11_FILTER_MIN_MAG_MIP_POINT : D3D11_FILTER_MIN_MAG_MIP_LINEAR,
+			D3D11_TEXTURE_ADDRESS_WRAP);
+		if (smp == nullptr) return false;
+		D3D::cxt->CSSetSamplers(0, 1, smp.GetAddressOf());
+	}
 	D3D::cxt->Dispatch(
 		(width_dst + ((1 << 3) - 1)) >> 3,
 		(height_dst + ((1 << 3) - 1)) >> 3, 1);
@@ -741,22 +974,36 @@ bool ops::combine(
 	int offset_shape_x, int offset_shape_y, // offset of shape within dest.
 	::ID3D11ShaderResourceView* srv_src, ::ID3D11ShaderResourceView* srv_shape,
 	::ID3D11UnorderedAccessView* uav_dst,
-	color_float const& color,
+	pattern_info const& pattern,
 	double alpha_src, double alpha_shape, bool is_src_front)
 {
 	if (!init()) return false;
 
 	// create constant buffer.
-	auto cbuff = D3D::create_const_buffer(cs_cbuff_combine{
+	auto cbuff = pattern.is_color() ? D3D::create_const_buffer(cs_cbuff_combine{
 		.size_src_x = static_cast<uint32_t>(width_src), .size_src_y = static_cast<uint32_t>(height_src),
 		.size_shape_x = static_cast<uint32_t>(width_shape), .size_shape_y = static_cast<uint32_t>(height_shape),
 		.size_dst_x = static_cast<uint32_t>(width_dst), .size_dst_y = static_cast<uint32_t>(height_dst),
 		.is_src_front = is_src_front,
-		.color = color,
+		.color = pattern.solid,
 		.offset_src_x = offset_src_x, .offset_src_y = offset_src_y,
 		.offset_shape_x = offset_shape_x, .offset_shape_y = offset_shape_y,
 		.a_src = static_cast<float>(alpha_src),
 		.a_shape = static_cast<float>(alpha_shape),
+	}) : D3D::create_const_buffer(cs_cbuff_combine_pat{
+		.size_src_x = static_cast<uint32_t>(width_src), .size_src_y = static_cast<uint32_t>(height_src),
+		.size_shape_x = static_cast<uint32_t>(width_shape), .size_shape_y = static_cast<uint32_t>(height_shape),
+		.size_dst_x = static_cast<uint32_t>(width_dst), .size_dst_y = static_cast<uint32_t>(height_dst),
+		.is_src_front = is_src_front,
+		.offset_src_x = offset_src_x, .offset_src_y = offset_src_y,
+		.offset_shape_x = offset_shape_x, .offset_shape_y = offset_shape_y,
+		.a_src = static_cast<float>(alpha_src),
+		.a_shape = static_cast<float>(alpha_shape),
+		.mat_move_pat = {
+			pattern,
+			width_src / 2.0 - offset_src_x + offset_shape_x,
+			height_src / 2.0 - offset_src_y + offset_shape_y,
+		},
 	});
 	if (cbuff == nullptr) return false;
 
@@ -766,6 +1013,13 @@ bool ops::combine(
 	D3D::cxt->CSSetShaderResources(0, std::size(srv_combine), srv_combine);
 	D3D::cxt->CSSetUnorderedAccessViews(0, 1, &uav_dst, nullptr);
 	D3D::cxt->CSSetConstantBuffers(0, 1, cbuff.GetAddressOf());
+	if (pattern.is_pattern()) {
+		auto smp = D3D::create_sampler_state(
+			pattern.snap_to_pixel ? D3D11_FILTER_MIN_MAG_MIP_POINT : D3D11_FILTER_MIN_MAG_MIP_LINEAR,
+			D3D11_TEXTURE_ADDRESS_WRAP);
+		if (smp == nullptr) return false;
+		D3D::cxt->CSSetSamplers(0, 1, smp.GetAddressOf());
+	}
 	D3D::cxt->Dispatch(
 		(width_dst + ((1 << 3) - 1)) >> 3,
 		(height_dst + ((1 << 3) - 1)) >> 3, 1);

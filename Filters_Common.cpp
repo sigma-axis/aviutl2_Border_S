@@ -13,6 +13,7 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 #include <cstdint>
 #include <cmath>
 #include <algorithm>
+#include <string>
 
 #include "d3d_service.hpp"
 using D3D = d3d_service::D3D;
@@ -79,6 +80,36 @@ ANON_NS_E
 ////////////////////////////////
 // exports.
 ////////////////////////////////
+common::pattern_info::pattern_info(pattern_types::id type, wchar_t const* file_path,
+	double scale, double rotate, double pos_x, double pos_y,
+	bool snap_to_pixel, pattern_origins::id origin,
+	FILTER_PROC_VIDEO* video)
+	: scale{ scale }, rotate{ rotate }, pos_x{ pos_x }, pos_y{ pos_y }
+	, snap_to_pixel{ snap_to_pixel }, origin{ origin }
+{
+	texture = nullptr;
+	switch (type) {
+	case pattern_types::image:
+	{
+		if (file_path[0] != L'\0') {
+			texture = video->get_image_resource_texture2d(
+				(std::wstring(L"image:") + file_path).c_str());
+		}
+		break;
+	}
+	case pattern_types::tempbuffer:
+	{
+		texture = video->get_image_resource_texture2d(L"tempbuffer");
+		break;
+	}
+	}
+	
+	if (texture != nullptr) {
+		auto const sz = D3D::get_size(texture);
+		width = sz.width; height = sz.height;
+	}
+}
+
 bool common::push_alpha(double alpha, FILTER_PROC_VIDEO* video)
 {
 	auto const obj = video->get_image_texture2d();

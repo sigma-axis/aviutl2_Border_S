@@ -15,9 +15,7 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-
 #include <d3d11.h>
-#pragma comment(lib, "d3d11")
 
 #include <wrl/client.h>
 
@@ -75,6 +73,42 @@ namespace d3d_service
 		static auto create_structured_buffer(uint32_t size_byte, T const* init)
 		{
 			return create_structured_buffer(static_cast<uint32_t>(sizeof(T)), size_byte, init);
+		}
+
+		static ::D3D11_TEXTURE1D_DESC get_desc(::ID3D11Texture1D* tex)
+		{
+			::D3D11_TEXTURE1D_DESC ret;
+			tex->GetDesc(&ret);
+			return ret;
+		}
+		static ::D3D11_TEXTURE2D_DESC get_desc(::ID3D11Texture2D* tex)
+		{
+			::D3D11_TEXTURE2D_DESC ret;
+			tex->GetDesc(&ret);
+			return ret;
+		}
+		static ::D3D11_BUFFER_DESC get_desc(::ID3D11Buffer* buff)
+		{
+			::D3D11_BUFFER_DESC ret;
+			buff->GetDesc(&ret);
+			return ret;
+		}
+
+		static uint32_t get_size(::ID3D11Texture1D* tex)
+		{
+			return get_desc(tex).Width;
+		}
+		static auto get_size(::ID3D11Texture2D* tex)
+		{
+			auto const desc = get_desc(tex);
+			struct size2d { uint32_t width, height; };
+			return size2d{ desc.Width, desc.Height };
+		}
+		static auto get_byte_width(::ID3D11Buffer* buff)
+		{
+			auto const desc = get_desc(buff);
+			struct size_buff { uint32_t byte_width, stride; };
+			return size_buff{ desc.ByteWidth, desc.StructureByteStride };
 		}
 
 		static ComPtr<::ID3D11Texture2D> clone(::ID3D11Texture2D* src, bool copy = true);

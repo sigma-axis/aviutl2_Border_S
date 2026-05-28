@@ -63,6 +63,52 @@ namespace Border_S::Filter::common
 		};
 	};
 
+	struct pattern_types {
+		enum id : int {
+			none = 0,
+			image = 1,
+			tempbuffer = 2,
+		};
+		constexpr static id clamp(int value) { return static_cast<id>(std::clamp(value, 0, 2)); }
+		constexpr static FILTER_ITEM_SELECT::ITEM items[] = {
+			{ L"単色", none },
+			{ L"画像ファイル", image },
+			{ L"仮想バッファ", tempbuffer },
+			{ nullptr, {} },
+		};
+	};
+
+	struct pattern_origins {
+		enum id : int {
+			source = 0,
+			shape = 1,
+		};
+		constexpr static id clamp(int value) { return static_cast<id>(std::clamp(value, 0, 1)); }
+	};
+
+	struct pattern_info {
+		::ID3D11Texture2D* texture = nullptr;
+		uint32_t width = 0, height = 0;
+		double scale = 1, rotate = 0, pos_x = 0, pos_y = 0;
+		bool snap_to_pixel = false;
+		pattern_origins::id origin = pattern_origins::source;
+		constexpr bool has_pattern() const { return texture != nullptr; }
+		constexpr void move_to_shape(double dx, double dy)
+		{
+			if (has_pattern() && origin == pattern_origins::shape) {
+				// adjust pattern position according to the specified origin.
+				pos_x += dx;
+				pos_y += dy;
+			}
+		}
+
+		constexpr pattern_info() = default;
+		pattern_info(pattern_types::id type, wchar_t const* file_path,
+			double scale, double rotate, double pos_x, double pos_y,
+			bool snap_to_pixel, pattern_origins::id origin,
+			FILTER_PROC_VIDEO* video);
+	};
+
 	// converts numbers [-3, 3] into [0, +oo], for the exponent of superellipses.
 	constexpr double conv_sup_ell_expo(double track_value)
 	{

@@ -12,12 +12,14 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 
 #include <cstdint>
 #include <cmath>
+#include <numbers>
 #include <algorithm>
 
 #include "d3d_service.hpp"
-using D3D = d3d_service::D3D;
+using d3d_service::D3D;
 #include "image_ops.hpp"
-using color_float = Border_S::image_ops::color_float;
+using Border_S::image_ops::color_float;
+using pattern_ops = Border_S::image_ops::pattern_info;
 using image_ops = Border_S::image_ops::ops;
 
 #include "Filters_Common.hpp"
@@ -39,7 +41,7 @@ namespace params
 	FILTER_ITEM_TRACK size{ L"サイズ", 5.00, -500.00, 500.00, 0.01 };
 	FILTER_ITEM_TRACK blur{ L"ぼかし", 0.00, 0.00, 200.00, 0.01 };
 	FILTER_ITEM_COLOR color{ L"縁色", 0xff'ff'ff }; // defaults white.
-	using methods = common::methods;
+	using common::methods;
 	FILTER_ITEM_SELECT method{ L"方式", methods::bin_smooth, const_cast<FILTER_ITEM_SELECT::ITEM*>(methods::items) };
 	FILTER_ITEM_TRACK a_param{ L"α調整", 50.00, 0.00, 100.00, 0.01 };
 	struct directions {
@@ -64,13 +66,30 @@ namespace params
 	FILTER_ITEM_TRACK move_x{ L"移動X", 0.00, -1000.00, +1000.00, 0.01 };
 	FILTER_ITEM_TRACK move_y{ L"移動Y", 0.00, -1000.00, +1000.00, 0.01 };
 
+	FILTER_ITEM_GROUP group_pattern{ L"パターン画像", false };
+	using common::pattern_types;
+	FILTER_ITEM_SELECT pattern_type{ L"pattern::パターンの種類", pattern_types::none, const_cast<FILTER_ITEM_SELECT::ITEM*>(pattern_types::items) };
+	FILTER_ITEM_FILE pattern_file{ L"pattern::画像ファイル", L"", L"Image File (*.bmp;*.tga;*.jpg;*.png;*.*)\0*.bmp;*.tga;*.jpg;*.png;*.*\0" };
+	FILTER_ITEM_TRACK pattern_x{ L"pattern::移動X", 0.00, -4000.00, +4000.00, 0.01 };
+	FILTER_ITEM_TRACK pattern_y{ L"pattern::移動Y", 0.00, -4000.00, +4000.00, 0.01 };
+	FILTER_ITEM_TRACK pattern_rotate{ L"pattern::回転", 0.00, -720.00, +720.00, 0.01 };
+	FILTER_ITEM_TRACK pattern_scale{ L"pattern::拡大率", 100.00, 0.001, 10000.00, 0.001 };
+	using common::pattern_origins;
+	constexpr static FILTER_ITEM_SELECT::ITEM pattern_origins_items[] = {
+		{ L"元画像", pattern_origins::source },
+		{ L"縁取り", pattern_origins::shape },
+		{ nullptr, {} },
+	};
+	FILTER_ITEM_SELECT pattern_origin{ L"pattern::基準位置", pattern_origins::shape, const_cast<FILTER_ITEM_SELECT::ITEM*>(pattern_origins_items) };
+	FILTER_ITEM_CHECK pattern_snap_to_pixel{ L"pattern::補間なし", false };
+
 	FILTER_ITEM_GROUP group_others{ L"その他", false };
 	FILTER_ITEM_TRACK aspect{ L"縦横比", 0.000, -100.000, +100.000, 0.001 };
 	FILTER_ITEM_TRACK pos_radius{ L"凸半径", 0.00, 0.00, 500.00, 0.01 };
 	FILTER_ITEM_TRACK neg_radius{ L"凹半径", 0.00, 0.00, 500.00, 0.01 };
 	FILTER_ITEM_TRACK sup_ell_expo{ L"膨らみ", 100.000, -300.000, +300.00, 0.001 };
 	using blur_spec = common::blur;
-	FILTER_ITEM_SELECT blur_type { L"ぼかしの種類", common::blur::triangular, const_cast<FILTER_ITEM_SELECT::ITEM*>(common::blur::items) };
+	FILTER_ITEM_SELECT blur_type { L"ぼかしの種類", blur_spec::triangular, const_cast<FILTER_ITEM_SELECT::ITEM*>(common::blur::items) };
 
 	constexpr void* all[] = {
 		&size,
@@ -87,6 +106,16 @@ namespace params
 		&group_move,
 		&move_x,
 		&move_y,
+
+		&group_pattern,
+		&pattern_type,
+		&pattern_file,
+		&pattern_x,
+		&pattern_y,
+		&pattern_rotate,
+		&pattern_scale,
+		&pattern_origin,
+		&pattern_snap_to_pixel,
 
 		&group_others,
 		&aspect,
@@ -109,6 +138,7 @@ bool filter_core(
 	double alpha_border, double alpha_source,
 	params::methods::id method, double a_param,
 	color_float const& color, params::directions::id direction, params::blur_spec::id blur_type,
+	common::pattern_info&& pattern,
 	FILTER_PROC_VIDEO* video)
 {
 	// determine the input and output dimensions.
@@ -186,17 +216,38 @@ bool filter_core(
 		method, a_param);
 	if (srv_shape == nullptr) return false;
 
+	// prepare pattern.
+	D3D::ComPtr<::ID3D11ShaderResourceView> srv_pat = nullptr;
+	pattern_ops pat_ops;
+	if (pattern.has_pattern()) {
+		srv_pat = D3D::to_shader_resource_view(pattern.texture);
+		if (srv_pat == nullptr) return false;
+		pattern.move_to_shape(move_x, move_y);
+		pat_ops = {
+			.srv = srv_pat.Get(),
+			.width = static_cast<int>(pattern.width),
+			.height = static_cast<int>(pattern.height),
+			.scale = pattern.scale,
+			.rotate = pattern.rotate,
+			.pos_x = pattern.pos_x,
+			.pos_y = pattern.pos_y,
+			.snap_to_pixel = pattern.snap_to_pixel,
+		};
+	}
+	else pat_ops = { .solid = color };
+
 	// combine with the original image.
 	switch (direction) {
 	case params::directions::outer: default:
 	{
+		
 		if (!image_ops::draw(
 			width_src, height_src,
 			width_dst, height_dst,
 			size_li, size_ti,
 			srv_src_obj.Get(),
 			srv_shape.Get(), uav_obj.Get(),
-			color, alpha_source, alpha_border)) return false;
+			pat_ops, alpha_source, alpha_border)) return false;
 
 		// adjust center.
 		video->param->cx += (size_li - size_ri) / 2.0f;
@@ -210,7 +261,7 @@ bool filter_core(
 			width_src, height_src,
 			-size_li, -size_ti,
 			srv_shape.Get(), uav_obj.Get(),
-			color, true, alpha_border, alpha_source)) return false;
+			pat_ops, true, alpha_border, alpha_source)) return false;
 		break;
 	}
 	}
@@ -236,6 +287,11 @@ bool filter(FILTER_PROC_VIDEO* video)
 		move_x = std::clamp(params::move_x.value, params::move_x.s, params::move_x.e),
 		move_y = std::clamp(params::move_y.value, params::move_y.s, params::move_y.e),
 
+		pattern_x = std::clamp(params::pattern_x.value, params::pattern_x.s, params::pattern_x.e),
+		pattern_y = std::clamp(params::pattern_y.value, params::pattern_y.s, params::pattern_y.e),
+		pattern_rotate = std::fmod(std::clamp(params::pattern_rotate.value, params::pattern_rotate.s, params::pattern_rotate.e), 360) * std::numbers::pi / 180,
+		pattern_scale = std::clamp(params::pattern_scale.value, params::pattern_scale.s, params::pattern_scale.e) / 100,
+
 		aspect = std::clamp(params::aspect.value, params::aspect.s, params::aspect.e) / 100,
 		pos_radius = std::clamp(params::pos_radius.value, params::pos_radius.s, params::pos_radius.e),
 		neg_radius = std::clamp(params::neg_radius.value, params::neg_radius.s, params::neg_radius.e),
@@ -245,6 +301,10 @@ bool filter(FILTER_PROC_VIDEO* video)
 	auto const direction = params::directions::clamp(params::direction.value);
 	auto const blur_type = params::blur_spec::clamp(params::blur_type.value);
 	auto const color = color_float::from_rgb(params::color.value.code & 0xffffff);
+	auto const pattern_type = params::pattern_types::clamp(params::pattern_type.value);
+	auto const pattern_file = params::pattern_file.value;
+	auto const pattern_origin = params::pattern_origins::clamp(params::pattern_origin.value);
+	auto const snap_to_pixel = params::pattern_snap_to_pixel.value;
 
 	// further calculations.
 	double const
@@ -281,7 +341,12 @@ bool filter(FILTER_PROC_VIDEO* video)
 		alpha_border, alpha_source,
 		method, a_param,
 		color, direction, blur_type,
-		video);
+		{
+			pattern_type, pattern_file,
+			pattern_scale, pattern_rotate, pattern_x, pattern_y,
+			snap_to_pixel, pattern_origin,
+			video,
+		}, video);
 }
 ANON_NS_E
 

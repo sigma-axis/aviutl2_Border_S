@@ -55,6 +55,18 @@ namespace Border_S::image_ops
 			};
 		}
 	};
+
+	struct pattern_info {
+		::ID3D11ShaderResourceView* srv = nullptr;
+		int width = 0, height = 0;
+		double scale = 0, rotate = 0, pos_x = 0, pos_y = 0;
+		bool snap_to_pixel = false;
+		color_float solid = {};
+
+		constexpr bool is_color() const { return srv == nullptr; }
+		constexpr bool is_pattern() const { return !is_color(); }
+	};
+
 	struct ops {
 		/**
 		* @brief Extracts the alpha channel from a region of a source shader resource view and writes it into a destination unordered access view.
@@ -73,7 +85,7 @@ namespace Border_S::image_ops
 			int src_left, int src_top, ::ID3D11ShaderResourceView* src,
 			int dst_left, int dst_top, ::ID3D11UnorderedAccessView* dst);
 		/**
-		* @brief Draws an image and a shape onto a destination texture with specified color and alpha values.
+		* @brief Draws an image and a shape onto a destination texture with specified color or pattern.
 		* @param width_src Width of the source image texture in pixels.
 		* @param height_src Height of the source image texture in pixels.
 		* @param width_dst Width of the destination texture in pixels.
@@ -84,7 +96,7 @@ namespace Border_S::image_ops
 		* @param srv_shape Pointer to the source ID3D11ShaderResourceView providing the shape texture.
 				 Must have the same width and height as the uav_dst.
 		* @param uav_dst Pointer to the destination ID3D11UnorderedAccessView that will receive the drawn image.
-		* @param color Color to apply to the shape.
+		* @param pattern Color or pattern to apply to the shape.
 		* @param alpha_front Alpha value for the front source image.
 		* @param alpha_back Alpha value for the back source shape.
 		* @returns true if the draw operation succeeded; false otherwise.
@@ -92,13 +104,13 @@ namespace Border_S::image_ops
 		static bool draw(
 			int width_src, int height_src,
 			int width_dst, int height_dst,
-			int offset_x, int offset_y, // offset of source within dest.
+			int offset_x, int offset_y,
 			::ID3D11ShaderResourceView* srv_src,
 			::ID3D11ShaderResourceView* srv_shape, ::ID3D11UnorderedAccessView* uav_dst,
-			color_float const& color,
+			pattern_info const& pattern,
 			double alpha_front, double alpha_back);
 		/**
-		* @brief Fills a region of an image with specified color and alpha values.
+		* @brief Fills a region of an image with specified color or pattern.
 		* @param width_shape Width of the source shape texture in pixels, specifying the region to fill.
 		* @param height_shape Height of the source shape texture in pixels, specifying the region to fill.
 		* @param width_dst Width of the destination texture in pixels.
@@ -107,8 +119,8 @@ namespace Border_S::image_ops
 		* @param offset_y Vertical offset of the shape within the destination (in destination space).
 		* @param srv_shape Pointer to the source ID3D11ShaderResourceView providing the shape texture.
 		* @param uav_dst Pointer to the destination ID3D11UnorderedAccessView that will provide the source image and receive the recolored image.
-		* @param color Color to apply to the shape.
-		* @param invert True to invert the shape's colors; false otherwise.
+		* @param pattern Color or pattern to apply to the shape.
+		* @param invert True to invert the shape as a mask; false otherwise.
 		* @param alpha_front Alpha value for the front source shape.
 		* @param alpha_back Alpha value for the back source image.
 		* @returns true if the function succeeded; false otherwise.
@@ -116,9 +128,9 @@ namespace Border_S::image_ops
 		static bool recolor(
 			int width_shape, int height_shape,
 			int width_dst, int height_dst,
-			int offset_x, int offset_y, // offset of shape within dest.
+			int offset_x, int offset_y,
 			::ID3D11ShaderResourceView* srv_shape, ::ID3D11UnorderedAccessView* uav_dst,
-			color_float const& color, bool invert,
+			pattern_info const& pattern, bool invert,
 			double alpha_front, double alpha_back);
 		/**
 		* @brief Carves a shape from a destination texture based on a source shape texture, modifying the alpha values of the destination according to the shape and specified alpha parameters.
@@ -137,7 +149,7 @@ namespace Border_S::image_ops
 		static bool carve(
 			int width_shape, int height_shape,
 			int width_dst, int height_dst,
-			int offset_x, int offset_y, // offset of shape within dest.
+			int offset_x, int offset_y,
 			::ID3D11ShaderResourceView* srv_shape, ::ID3D11UnorderedAccessView* uav_dst,
 			double alpha, bool is_dst_scalar);
 		/**
@@ -155,7 +167,7 @@ namespace Border_S::image_ops
 		* @param srv_src Pointer to the source ID3D11ShaderResourceView providing the source image.
 		* @param srv_shape Pointer to the source ID3D11ShaderResourceView providing the shape texture.
 		* @param uav_dst Pointer to the destination ID3D11UnorderedAccessView that will receive the combined image.
-		* @param color Color to apply to the shape.
+		* @param pattern Color or pattern to apply to the shape.
 		* @param alpha_src Alpha value for the source image.
 		* @param alpha_shape Alpha value for the shape.
 		* @param is_src_front True if the source image should be in front of the shape; false otherwise.
@@ -165,11 +177,11 @@ namespace Border_S::image_ops
 			int width_src, int height_src,
 			int width_shape, int height_shape,
 			int width_dst, int height_dst,
-			int offset_src_x, int offset_src_y, // offset of source within dest.
-			int offset_shape_x, int offset_shape_y, // offset of shape within dest.
+			int offset_src_x, int offset_src_y,
+			int offset_shape_x, int offset_shape_y,
 			::ID3D11ShaderResourceView* srv_src, ::ID3D11ShaderResourceView* srv_shape,
 			::ID3D11UnorderedAccessView* uav_dst,
-			color_float const& color,
+			pattern_info const& pattern,
 			double alpha_src, double alpha_shape, bool is_src_front);
 
 		enum class blur_type : int {

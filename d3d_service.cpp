@@ -208,8 +208,7 @@ ComPtr<::ID3D11Buffer> D3D::create_structured_buffer(uint32_t size_element, uint
 
 ComPtr<::ID3D11Texture2D> D3D::clone(::ID3D11Texture2D* src, bool copy)
 {
-	::D3D11_TEXTURE2D_DESC desc;
-	src->GetDesc(&desc);
+	auto const desc = get_desc(src);
 	ComPtr<::ID3D11Texture2D> ret;
 	if (S_OK != device->CreateTexture2D(&desc, nullptr, &ret)) {
 		logging::error(L"Failed to create 2D texture!");

@@ -15,9 +15,9 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 #include <algorithm>
 
 #include "d3d_service.hpp"
-using D3D = d3d_service::D3D;
+using d3d_service::D3D;
 #include "image_ops.hpp"
-using color_float = Border_S::image_ops::color_float;
+using Border_S::image_ops::color_float;
 using image_ops = Border_S::image_ops::ops;
 
 #include "Filters_Common.hpp"
@@ -40,7 +40,7 @@ namespace params
 	FILTER_ITEM_TRACK line{ L"ライン幅", 10.00, -4000.00, 500.00, 0.01 };
 	FILTER_ITEM_TRACK blur{ L"ぼかし", 0.00, 0.00, 500.00, 0.01 };
 	FILTER_ITEM_COLOR color{ L"縁色", 0xff'ff'ff }; // defaults white.
-	using methods = common::methods;
+	using common::methods;
 	FILTER_ITEM_SELECT method{ L"方式", methods::bin_smooth, const_cast<FILTER_ITEM_SELECT::ITEM*>(methods::items) };
 	FILTER_ITEM_TRACK a_param{ L"α調整", 50.00, 0.00, 100.00, 0.01 };
 
@@ -364,7 +364,7 @@ bool filter_core(
 			diff_li - size_li, diff_ti - size_ti,
 			srv_src_obj.Get(), srv_shape.Get(),
 			uav_obj.Get(),
-			color, alpha_source, alpha_border,
+			{ .solid = color }, alpha_source, alpha_border,
 			composition == params::compositions::background)) return false;
 
 		// adjust center.
