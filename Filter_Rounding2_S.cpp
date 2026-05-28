@@ -36,14 +36,14 @@ ANON_NS_B
 ////////////////////////////////
 namespace params
 {
-	FILTER_ITEM_TRACK radius{ L"半径", 32.00, 0.00, 500.00, 0.01 };
-	FILTER_ITEM_TRACK blur{ L"ぼかし", 0.00, 0.00, 500.00, 0.01 };
+	FILTER_ITEM_TRACK radius{ L"半径", 32.00, 0.00, 500.00, 0.01, nullptr, 0.4 };
+	FILTER_ITEM_TRACK blur{ L"ぼかし", 0.00, 0.00, 500.00, 0.01, nullptr, 0.4 };
 	using methods = common::methods;
 	FILTER_ITEM_SELECT method{ L"方式", methods::bin_smooth, const_cast<FILTER_ITEM_SELECT::ITEM*>(methods::items) };
 	FILTER_ITEM_TRACK a_param{ L"α調整", 50.00, 0.00, 100.00, 0.01 };
 
 	FILTER_ITEM_GROUP group_shrink{ L"縁の縮小の設定", false };
-	FILTER_ITEM_TRACK shrink{ L"縁の縮小", 0.00, 0.00, 500.00, 0.01 };
+	FILTER_ITEM_TRACK shrink{ L"縁の縮小", 0.00, 0.00, 500.00, 0.01, nullptr, 0.4 };
 	FILTER_ITEM_CHECK fixed_size{ L"サイズ固定", true };
 
 	FILTER_ITEM_GROUP group_others{ L"その他", false };

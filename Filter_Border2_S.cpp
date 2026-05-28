@@ -38,8 +38,8 @@ ANON_NS_B
 ////////////////////////////////
 namespace params
 {
-	FILTER_ITEM_TRACK size{ L"サイズ", 5.00, -500.00, 500.00, 0.01 };
-	FILTER_ITEM_TRACK blur{ L"ぼかし", 0.00, 0.00, 200.00, 0.01 };
+	FILTER_ITEM_TRACK size{ L"サイズ", 5.00, -500.00, 500.00, 0.01, nullptr, 0.4 };
+	FILTER_ITEM_TRACK blur{ L"ぼかし", 0.00, 0.00, 200.00, 0.01, nullptr, 0.5 };
 	FILTER_ITEM_COLOR color{ L"縁色", 0xff'ff'ff }; // defaults white.
 	using common::methods;
 	FILTER_ITEM_SELECT method{ L"方式", methods::bin_smooth, const_cast<FILTER_ITEM_SELECT::ITEM*>(methods::items) };
@@ -63,17 +63,17 @@ namespace params
 	FILTER_ITEM_TRACK alpha_source{ L"前景透明度", 0.00, 0.00, 100.00, 0.01 };
 
 	FILTER_ITEM_GROUP group_move{ L"位置調整", false };
-	FILTER_ITEM_TRACK move_x{ L"移動X", 0.00, -1000.00, +1000.00, 0.01 };
-	FILTER_ITEM_TRACK move_y{ L"移動Y", 0.00, -1000.00, +1000.00, 0.01 };
+	FILTER_ITEM_TRACK move_x{ L"移動X", 0.00, -1000.00, +1000.00, 0.01, nullptr, 0.5 };
+	FILTER_ITEM_TRACK move_y{ L"移動Y", 0.00, -1000.00, +1000.00, 0.01, nullptr, 0.5 };
 
 	FILTER_ITEM_GROUP group_pattern{ L"パターン画像", false };
 	using common::pattern_types;
 	FILTER_ITEM_SELECT pattern_type{ L"pattern::パターンの種類", pattern_types::none, const_cast<FILTER_ITEM_SELECT::ITEM*>(pattern_types::items) };
 	FILTER_ITEM_FILE pattern_file{ L"pattern::画像ファイル", L"", L"Image File (*.bmp;*.tga;*.jpg;*.png;*.*)\0*.bmp;*.tga;*.jpg;*.png;*.*\0" };
-	FILTER_ITEM_TRACK pattern_x{ L"pattern::移動X", 0.00, -4000.00, +4000.00, 0.01 };
-	FILTER_ITEM_TRACK pattern_y{ L"pattern::移動Y", 0.00, -4000.00, +4000.00, 0.01 };
-	FILTER_ITEM_TRACK pattern_rotate{ L"pattern::回転", 0.00, -720.00, +720.00, 0.01 };
-	FILTER_ITEM_TRACK pattern_scale{ L"pattern::拡大率", 100.00, 0.001, 10000.00, 0.001 };
+	FILTER_ITEM_TRACK pattern_x{ L"pattern::移動X", 0.00, -4000.00, +4000.00, 0.01, nullptr, 0.25 };
+	FILTER_ITEM_TRACK pattern_y{ L"pattern::移動Y", 0.00, -4000.00, +4000.00, 0.01, nullptr, 0.25 };
+	FILTER_ITEM_TRACK pattern_rotate{ L"pattern::回転", 0.00, -1440.00, +1440.00, 0.01, nullptr, 0.25 };
+	FILTER_ITEM_TRACK pattern_scale{ L"pattern::拡大率", 100.00, 0.001, 10000.00, 0.001, nullptr, 0.02 };
 	using common::pattern_origins;
 	constexpr static FILTER_ITEM_SELECT::ITEM pattern_origins_items[] = {
 		{ L"元画像", pattern_origins::source },
@@ -85,8 +85,8 @@ namespace params
 
 	FILTER_ITEM_GROUP group_others{ L"その他", false };
 	FILTER_ITEM_TRACK aspect{ L"縦横比", 0.000, -100.000, +100.000, 0.001 };
-	FILTER_ITEM_TRACK pos_radius{ L"凸半径", 0.00, 0.00, 500.00, 0.01 };
-	FILTER_ITEM_TRACK neg_radius{ L"凹半径", 0.00, 0.00, 500.00, 0.01 };
+	FILTER_ITEM_TRACK pos_radius{ L"凸半径", 0.00, 0.00, 500.00, 0.01, nullptr, 0.4 };
+	FILTER_ITEM_TRACK neg_radius{ L"凹半径", 0.00, 0.00, 500.00, 0.01, nullptr, 0.4 };
 	FILTER_ITEM_TRACK sup_ell_expo{ L"膨らみ", 100.000, -300.000, +300.00, 0.001 };
 	using blur_spec = common::blur;
 	FILTER_ITEM_SELECT blur_type { L"ぼかしの種類", blur_spec::triangular, const_cast<FILTER_ITEM_SELECT::ITEM*>(common::blur::items) };
