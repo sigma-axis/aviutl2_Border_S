@@ -78,7 +78,7 @@ namespace params
 	FILTER_ITEM_TRACK pattern_scale{ L"pattern::拡大率", 100.00, 0.001, 10000.00, 0.001, nullptr, 0.02 };
 	using common::pattern_origins;
 	FILTER_ITEM_SELECT pattern_origin{ L"pattern::基準位置", pattern_origins::shape, const_cast<FILTER_ITEM_SELECT::ITEM*>(pattern_origins::items) };
-	FILTER_ITEM_CHECK pattern_snap_to_pixel{ L"pattern::補間なし", false };
+	FILTER_ITEM_CHECK pattern_snap_to_pixel{ L"pattern::補間なし", true };
 
 	FILTER_ITEM_GROUP group_others{ L"その他", false };
 	FILTER_ITEM_TRACK dist_aspect{ L"距離縦横比", 0.000, -100.000, +100.000, 0.001 };
