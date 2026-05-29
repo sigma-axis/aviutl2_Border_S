@@ -18,25 +18,13 @@
     <ClCompile Include="Border_S.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Filter_Border2_S.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="d3d_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="logging.cpp">
+    <ClCompile Include="Filter_Border2_S.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="finalizing.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="method_bin.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="image_ops.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="method_bin2x.cpp">
+    <ClCompile Include="Filter_Outline2_S.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Filter_Rounding2_S.cpp">
@@ -45,16 +33,28 @@
     <ClCompile Include="Filters_Common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="method_sum.cpp">
+    <ClCompile Include="finalizing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Filter_Outline2_S.cpp">
+    <ClCompile Include="image_ops.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="logging.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="method_bin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="method_bin_smooth.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="method_bin2x.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="method_max.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="method_sum.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="methods_common.cpp">
@@ -62,28 +62,16 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Filter_Border2_S.hpp">
+    <ClInclude Include="Border_S.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="d3d_service.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="string_service.hpp">
+    <ClInclude Include="Filter_Border2_S.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="logging.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="finalizing.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="method_bin.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="image_ops.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="method_bin2x.hpp">
+    <ClInclude Include="Filter_Outline2_S.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Filter_Rounding2_S.hpp">
@@ -92,22 +80,34 @@
     <ClInclude Include="Filters_Common.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="method_sum.hpp">
+    <ClInclude Include="finalizing.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Filter_Outline2_S.hpp">
+    <ClInclude Include="image_ops.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Border_S.hpp">
+    <ClInclude Include="logging.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="method_bin.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="method_bin_smooth.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="method_bin2x.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="method_max.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="method_sum.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="methods_common.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="string_service.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

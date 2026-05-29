@@ -16,7 +16,6 @@
     <ProjectGuid>{2f2b37c7-d722-47db-9e43-06a4e7ba919e}</ProjectGuid>
     <RootNamespace>BorderS</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>Border_S</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -56,8 +55,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PreprocessorDefinitions>_DEBUG;BORDERS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>sdk/include/aviutl2_sdk</AdditionalIncludeDirectories>
-      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(SolutionDir)sdk/include/aviutl2_sdk</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -67,20 +65,21 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <PreprocessorDefinitions>NDEBUG;BORDERS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>sdk/include/aviutl2_sdk</AdditionalIncludeDirectories>
-      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(SolutionDir)sdk/include/aviutl2_sdk</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Filter_Border2_S.cpp" />
     <ClCompile Include="Border_S.cpp" />
-    <ClCompile Include="Filters_Common.cpp" />
-    <ClCompile Include="image_ops.cpp" />
     <ClCompile Include="d3d_service.cpp" />
+    <ClCompile Include="Filters_Common.cpp" />
+    <ClCompile Include="Filter_Border2_S.cpp" />
+    <ClCompile Include="Filter_Outline2_S.cpp" />
+    <ClCompile Include="Filter_Rounding2_S.cpp" />
     <ClCompile Include="finalizing.cpp" />
+    <ClCompile Include="image_ops.cpp" />
     <ClCompile Include="logging.cpp" />
     <ClCompile Include="methods_common.cpp" />
     <ClCompile Include="method_bin.cpp" />
@@ -88,25 +87,23 @@
     <ClCompile Include="method_bin_smooth.cpp" />
     <ClCompile Include="method_max.cpp" />
     <ClCompile Include="method_sum.cpp" />
-    <ClCompile Include="Filter_Outline2_S.cpp" />
-    <ClCompile Include="Filter_Rounding2_S.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Filter_Border2_S.hpp" />
     <ClInclude Include="Border_S.hpp" />
-    <ClInclude Include="method_bin_smooth.hpp" />
-    <ClInclude Include="methods_common.hpp" />
-    <ClInclude Include="method_max.hpp" />
-    <ClInclude Include="method_sum.hpp" />
-    <ClInclude Include="Filters_Common.hpp" />
-    <ClInclude Include="image_ops.hpp" />
     <ClInclude Include="d3d_service.hpp" />
-    <ClInclude Include="finalizing.hpp" />
-    <ClInclude Include="logging.hpp" />
-    <ClInclude Include="method_bin.hpp" />
-    <ClInclude Include="method_bin2x.hpp" />
+    <ClInclude Include="Filters_Common.hpp" />
+    <ClInclude Include="Filter_Border2_S.hpp" />
     <ClInclude Include="Filter_Outline2_S.hpp" />
     <ClInclude Include="Filter_Rounding2_S.hpp" />
+    <ClInclude Include="finalizing.hpp" />
+    <ClInclude Include="image_ops.hpp" />
+    <ClInclude Include="logging.hpp" />
+    <ClInclude Include="methods_common.hpp" />
+    <ClInclude Include="method_bin.hpp" />
+    <ClInclude Include="method_bin2x.hpp" />
+    <ClInclude Include="method_bin_smooth.hpp" />
+    <ClInclude Include="method_max.hpp" />
+    <ClInclude Include="method_sum.hpp" />
     <ClInclude Include="string_service.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
