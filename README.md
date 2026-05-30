@@ -112,14 +112,14 @@ Although, usage documentations for this script / plugin in languages other than 
     - `総和` よりやや遅い．
 
 | 方式 | サンプル | α調整 | 計算量 |
-|:---:|:---:|:---|:---:|
-| `2値化` | ![2値化での結果の例](https://github.com/user-attachments/assets/56460022-1a52-4c3e-8509-ca22ed1ebbb9) | アルファ値のしきい値を指定 | $O(WH)$ |
-| `2値化倍精度` | ![2値化倍精度での結果の例](https://github.com/user-attachments/assets/5ec1ac87-3cf5-43aa-86ce-6a64b3d789cf) | アルファ値のしきい値を指定 | $O(WH)$ |
-| `2値化スムーズ` | ![2値化スムーズでの結果の例](https://github.com/user-attachments/assets/d43ba1b4-44bf-4a0d-a505-93e3bbad438b) | アルファ値のしきい値を指定 | $O(rWH)$ |
-| `総和` | ![総和での結果の例](https://github.com/user-attachments/assets/e050c3cf-5cfa-4958-bced-4c9a1b2be5d5) | 縁取り境界のアンチエイリアス幅を調整 | $O(rWH)$ |
+|:---:|:---:|:---:|:---:|
+| `2値化` | ![2値化での結果の例](https://github.com/user-attachments/assets/56460022-1a52-4c3e-8509-ca22ed1ebbb9) | アルファ値の<br>しきい値を指定 | $O(WH)$ |
+| `2値化倍精度` | ![2値化倍精度での結果の例](https://github.com/user-attachments/assets/5ec1ac87-3cf5-43aa-86ce-6a64b3d789cf) | アルファ値の<br>しきい値を指定 | $O(WH)$ |
+| `2値化スムーズ` | ![2値化スムーズでの結果の例](https://github.com/user-attachments/assets/d43ba1b4-44bf-4a0d-a505-93e3bbad438b) | アルファ値の<br>しきい値を指定 | $O(rWH)$ |
+| `総和` | ![総和での結果の例](https://github.com/user-attachments/assets/e050c3cf-5cfa-4958-bced-4c9a1b2be5d5) | 縁取り境界の<br>アンチエイリアス<br>幅を調整 | $O(rWH)$ |
 | `最大値` | ![最大値での結果の例](https://github.com/user-attachments/assets/23fd51ad-109f-4b84-981a-df4d10f54eea) | 無視されます | $O(rWH)$ |
 
-- 計算量の $r$ は縁取りサイズ，$W$ は画像の幅，$H$ は画像の高さを表します．
+- 計算量の $r$ は縁取りサイズ， $W$ は画像の幅， $H$ は画像の高さを表します．
 - どの「方式」を選んでも，標準の「縁取り」よりも高速で動作することを確認しています (beta47 時点).
 
 初期値は `2値化スムーズ`.
@@ -164,6 +164,8 @@ Although, usage documentations for this script / plugin in languages other than 
 ### パターンの種類 / 画像ファイル
 
 縁取りにパターン画像を適用できます．
+
+![アウトラインσに仮想バッファでパターンを適用した例](https://github.com/user-attachments/assets/9aa9ce8f-4f29-4f0d-aa53-bfe376ff0e3c)
 
 - 「パターンの種類」は次から選べます:
 
