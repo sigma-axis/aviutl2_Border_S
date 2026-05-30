@@ -92,8 +92,8 @@ common::pattern_info::pattern_info(pattern_types::id type, wchar_t const* file_p
 	case pattern_types::image:
 	{
 		if (file_path[0] != L'\0') {
-			texture = video->get_image_resource_texture2d(
-				(std::wstring(L"image:") + file_path).c_str());
+			auto const image = std::wstring(L"image:") + file_path;
+			texture = video->get_image_resource_texture2d(image.c_str());
 		}
 		break;
 	}
