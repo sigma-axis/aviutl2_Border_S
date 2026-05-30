@@ -165,7 +165,7 @@ Although, usage documentations for this script / plugin in languages other than 
 
 縁取りにパターン画像を適用できます．
 
-![アウトラインσに仮想バッファでパターンを適用した例](https://github.com/user-attachments/assets/9aa9ce8f-4f29-4f0d-aa53-bfe376ff0e3c)
+![仮想バッファでパターンを適用した例](https://github.com/user-attachments/assets/0e9a7359-af10-42cf-8117-0cd2670ba00d)
 
 - 「パターンの種類」は次から選べます:
 
