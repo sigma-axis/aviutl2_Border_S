@@ -101,10 +101,10 @@ namespace Border_S::Filter::common
 		pattern_origins::id origin = pattern_origins::source;
 		bool snap_to_pixel = false;
 		bool failure = false;
-		constexpr bool has_pattern() const { return texture != nullptr; }
+		constexpr bool is_valid() const { return texture != nullptr; }
 		constexpr void move_to_shape(double dx, double dy)
 		{
-			if (has_pattern() && origin == pattern_origins::shape) {
+			if (is_valid() && origin == pattern_origins::shape) {
 				// adjust pattern position according to the specified origin.
 				pos_x += dx;
 				pos_y += dy;

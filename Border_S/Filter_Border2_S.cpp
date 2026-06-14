@@ -72,8 +72,8 @@ namespace params
 	FILTER_ITEM_FILE pattern_file{ L"pattern::画像ファイル", L"", pattern_types::file_filter };
 	FILTER_ITEM_TRACK pattern_x{ L"pattern::移動X", 0.00, -4000.00, +4000.00, 0.01, nullptr, 0.25 };
 	FILTER_ITEM_TRACK pattern_y{ L"pattern::移動Y", 0.00, -4000.00, +4000.00, 0.01, nullptr, 0.25 };
-	FILTER_ITEM_TRACK pattern_rotate{ L"pattern::回転", 0.00, -1440.00, +1440.00, 0.01, nullptr, 0.25 };
 	FILTER_ITEM_TRACK pattern_scale{ L"pattern::拡大率", 100.00, 0.001, 10000.00, 0.001, nullptr, 0.02 };
+	FILTER_ITEM_TRACK pattern_rotate{ L"pattern::回転", 0.00, -1440.00, +1440.00, 0.01, nullptr, 0.25 };
 	using common::pattern_origins;
 	FILTER_ITEM_SELECT pattern_origin{ L"pattern::基準位置", pattern_origins::shape, const_cast<FILTER_ITEM_SELECT::ITEM*>(pattern_origins::items) };
 	FILTER_ITEM_CHECK pattern_snap_to_pixel{ L"pattern::補間なし", true };
@@ -216,7 +216,7 @@ bool filter_core(
 	// prepare pattern.
 	D3D::ComPtr<::ID3D11ShaderResourceView> srv_pat = nullptr;
 	pattern_ops pat_ops;
-	if (pattern.has_pattern()) {
+	if (pattern.is_valid()) {
 		srv_pat = D3D::to_shader_resource_view(pattern.texture);
 		if (srv_pat == nullptr) return false;
 		pattern.move_to_shape(move_x, move_y);
