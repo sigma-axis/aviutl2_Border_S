@@ -76,7 +76,7 @@ namespace params
 	FILTER_ITEM_TRACK pattern_rotate{ L"pattern::回転", 0.00, -1440.00, +1440.00, 0.01, nullptr, 0.25 };
 	using common::pattern_origins;
 	FILTER_ITEM_SELECT pattern_origin{ L"pattern::基準位置", pattern_origins::shape, const_cast<FILTER_ITEM_SELECT::ITEM*>(pattern_origins::items) };
-	FILTER_ITEM_CHECK pattern_snap_to_pixel{ L"pattern::補間なし", true };
+	FILTER_ITEM_CHECK_SECTION pattern_snap_to_pixel{ L"pattern::補間なし", true, false };
 
 	FILTER_ITEM_GROUP group_others{ L"その他", false };
 	FILTER_ITEM_TRACK aspect{ L"縦横比", 0.000, -100.000, +100.000, 0.001 };

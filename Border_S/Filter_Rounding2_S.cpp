@@ -44,7 +44,7 @@ namespace params
 
 	FILTER_ITEM_GROUP group_shrink{ L"縁の縮小の設定", false };
 	FILTER_ITEM_TRACK shrink{ L"縁の縮小", 0.00, 0.00, 500.00, 0.01, nullptr, 0.4 };
-	FILTER_ITEM_CHECK fixed_size{ L"サイズ固定", true };
+	FILTER_ITEM_CHECK_SECTION fixed_size{ L"サイズ固定", true, false };
 
 	FILTER_ITEM_GROUP group_others{ L"その他", false };
 	FILTER_ITEM_TRACK alpha{ L"透明度", +100.00, -100.00, +100.00, 0.01 };
