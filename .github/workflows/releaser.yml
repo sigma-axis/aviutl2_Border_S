@@ -20,9 +20,7 @@ permissions:
 jobs:
   build:
     name: Build
-    # runs-on: windows-latest
-    # note that 'windows-2025-vs2026' is still beta for now (2026/04/21).
-    runs-on: windows-2025-vs2026
+    runs-on: windows-latest
     strategy:
       matrix:
         configuration: [Release]
