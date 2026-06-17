@@ -48,11 +48,13 @@ namespace params
 		enum id : int {
 			outer = 0,
 			inner = 1,
+			inner_invert = 2,
 		};
-		constexpr static id clamp(int value) { return static_cast<id>(std::clamp(value, 0, 1)); }
+		constexpr static id clamp(int value) { return static_cast<id>(std::clamp(value, 0, 2)); }
 		constexpr static FILTER_ITEM_SELECT::ITEM items[] = {
 			{ L"外側縁取り", outer },
 			{ L"内側縁取り", inner },
+			{ L"内側反転", inner_invert },
 			{ nullptr, {} },
 		};
 	};
@@ -151,6 +153,7 @@ bool filter_core(
 		break;
 	}
 	case params::directions::inner:
+	case params::directions::inner_invert:
 	{
 		auto const bx = (size >= 0 ? 1 : -1) * aspect_x * blur, by = (size >= 0 ? 1 : -1) * aspect_y * blur;
 		size_li = static_cast<int>(std::ceil(2 * bx)) + static_cast<int>(std::ceil(-aspect_x * size - move_x));
@@ -182,7 +185,7 @@ bool filter_core(
 		append_inf_def(std::max(d, p) + n);
 		append_inf_def(-n);
 	}
-	if (direction == params::directions::inner) {
+	if (direction != params::directions::outer) {
 		for (int i = 0; i < inf_def_num; i++) inf_def_seq[i] *= -1;
 	}
 
@@ -191,7 +194,7 @@ bool filter_core(
 	if (!D3D::init(obj)) return false;
 
 	D3D::ComPtr<::ID3D11Texture2D> src_obj = obj;
-	if (direction != params::directions::inner) {
+	if (direction == params::directions::outer) {
 		src_obj = D3D::clone(obj);
 		if (src_obj == nullptr) return false;
 		video->set_image_data(nullptr, width_dst, height_dst);
@@ -252,13 +255,15 @@ bool filter_core(
 		break;
 	}
 	case params::directions::inner:
+	case params::directions::inner_invert:
 	{
 		if (!image_ops::recolor(
 			width_dst, height_dst,
 			width_src, height_src,
 			-size_li, -size_ti,
 			srv_shape.Get(), uav_obj.Get(),
-			pat_ops, true, alpha_border, alpha_source)) return false;
+			pat_ops, direction == params::directions::inner,
+			alpha_border, alpha_source)) return false;
 		break;
 	}
 	}
@@ -309,7 +314,8 @@ bool filter(FILTER_PROC_VIDEO* video)
 		aspect_y = std::min(1.0, 1 + aspect);
 
 	// handle trivial cases.
-	if ((size <= 0 && pos_radius <= 0 && neg_radius <= 0 && move_x == 0 && move_y == 0) ||
+	if ((size <= 0 && pos_radius <= 0 && neg_radius <= 0 && move_x == 0 && move_y == 0 &&
+		direction != params::directions::inner_invert) ||
 		alpha_border == 0) {
 		// push alpha value.
 		if (alpha_source < 1) {
