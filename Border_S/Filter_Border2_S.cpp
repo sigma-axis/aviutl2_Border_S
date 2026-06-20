@@ -54,7 +54,7 @@ namespace params
 		constexpr static FILTER_ITEM_SELECT::ITEM items[] = {
 			{ L"外側縁取り", outer },
 			{ L"内側縁取り", inner },
-			{ L"内側反転", inner_invert },
+			{ L"内側塗りつぶし", inner_invert },
 			{ nullptr, {} },
 		};
 	};
