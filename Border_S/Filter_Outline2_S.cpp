@@ -67,6 +67,10 @@ namespace params
 	FILTER_ITEM_GROUP group_move{ L"位置調整", false };
 	FILTER_ITEM_TRACK move_x{ L"移動X", 0.00, -1000.00, +1000.00, 0.01, nullptr, 0.5 };
 	FILTER_ITEM_TRACK move_y{ L"移動Y", 0.00, -1000.00, +1000.00, 0.01, nullptr, 0.5 };
+	FILTER_ITEM_TRACK* move_xy_tracks[] = {
+		&move_x, &move_y, nullptr,
+	};
+	FILTER_ITEM_TRACK_GROUP move_xy{ L"group_move_xy", move_xy_tracks };
 
 	FILTER_ITEM_GROUP group_pattern{ L"パターン画像", false };
 	using common::pattern_types;
@@ -74,6 +78,10 @@ namespace params
 	FILTER_ITEM_FILE pattern_file{ L"pattern::画像ファイル", L"", pattern_types::file_filter };
 	FILTER_ITEM_TRACK pattern_x{ L"pattern::移動X", 0.00, -4000.00, +4000.00, 0.01, nullptr, 0.25 };
 	FILTER_ITEM_TRACK pattern_y{ L"pattern::移動Y", 0.00, -4000.00, +4000.00, 0.01, nullptr, 0.25 };
+	FILTER_ITEM_TRACK* pattern_xy_tracks[] = {
+		&pattern_x,&pattern_y, nullptr,
+	};
+	FILTER_ITEM_TRACK_GROUP pattern_xy{ L"group_pattern_xy", pattern_xy_tracks };
 	FILTER_ITEM_TRACK pattern_scale{ L"pattern::拡大率", 100.00, 0.001, 10000.00, 0.001, nullptr, 0.02 };
 	FILTER_ITEM_TRACK pattern_rotate{ L"pattern::回転", 0.00, -1440.00, +1440.00, 0.01, nullptr, 0.25 };
 	using common::pattern_origins;
@@ -122,12 +130,14 @@ namespace params
 		&group_move,
 		&move_x,
 		&move_y,
+		&move_xy,
 
 		&group_pattern,
 		&pattern_type,
 		&pattern_file,
 		&pattern_x,
 		&pattern_y,
+		&pattern_xy,
 		&pattern_rotate,
 		&pattern_scale,
 		&pattern_origin,
