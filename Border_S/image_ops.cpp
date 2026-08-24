@@ -605,11 +605,11 @@ void csmain(uint2 id : SV_DispatchThreadID)
 	if (any(id >= size_dst)) return;
 
 	const int base_x = id.x - span_i;
-	float sum = src.Load(int3(base_x, id.y, 0)),
+	float sum = uint(base_x) < size_src.x ? src[int2(base_x, id.y)] : 0,
 		dwt0 = 1, wt0 = rates[0], dwt01 = rates[1];
 	for (uint x = 1; x <= span_i; x += 2, dwt0 *= rates[3], wt0 *= dwt0, dwt01 *= rates[2]) {
 		if (x == span_i) dwt01 = 0;
-		const float wt1 = wt0 * dwt01, med = saturate(1 - rcp(1 + dwt01)), x_med = x + med;
+		const float wt1 = wt0 * dwt01, med = saturate(dwt01 / (1 + dwt01)), x_med = x + med;
 		const float src_l = base_x - x_med, src_r = base_x + x_med;
 		sum += (wt0 + wt1) * (pick(float2(src_l, id.y) + 0.5) + pick(float2(src_r, id.y) + 0.5));
 	}
@@ -647,11 +647,11 @@ void csmain(uint2 id : SV_DispatchThreadID)
 	if (any(id >= size_dst)) return;
 
 	const int base_y = id.y - span_i;
-	float sum = src.Load(int3(id.x, base_y, 0)),
+	float sum = uint(base_y) < size_src.y ? src[uint2(id.x, base_y)] : 0,
 		dwt0 = 1, wt0 = rates[0], dwt01 = rates[1];
 	for (uint y = 1; y <= span_i; y += 2, dwt0 *= rates[3], wt0 *= dwt0, dwt01 *= rates[2]) {
 		if (y == span_i) dwt01 = 0;
-		const float wt1 = wt0 * dwt01, med = saturate(1 - rcp(1 + dwt01)), y_med = y + med;
+		const float wt1 = wt0 * dwt01, med = saturate(dwt01 / (1 + dwt01)), y_med = y + med;
 		const float src_t = base_y - y_med, src_b = base_y + y_med;
 		sum += (wt0 + wt1) * (pick(float2(id.x, src_t) + 0.5) + pick(float2(id.x, src_b) + 0.5));
 	}
