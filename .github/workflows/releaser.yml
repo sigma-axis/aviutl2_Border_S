@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
   push:
     tags:
-    - '*'
+      - '*'
     branches:
-    - '*'
+      - '*'
 
 env:
   SOLUTION_NAME: Border_S
@@ -27,40 +27,43 @@ jobs:
         platform: [x64]
 
     steps:
-    - uses: actions/checkout@v6
-      with:
-        submodules: recursive
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
 
-    - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v3
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v3
 
-    - name: Build
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      # Add additional options to the MSBuild command line here (like platform or verbosity level).
-      # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
-      run: msbuild /m /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} ${{ env.SOLUTION_NAME }}.slnx
+      - name: Build
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        # Add additional options to the MSBuild command line here (like platform or verbosity level).
+        # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
+        run: msbuild /m /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} ${{ env.SOLUTION_NAME }}.slnx
 
-    - name: Set package version
-      run: |
-        cd .\assets
-        (Get-Content .\package.ini -Raw) -replace '\${ver}', '${{ github.ref_name }}' | Set-Content .\package.ini
+      - name: Set package version
+        run: |
+          cd .\assets
+          (Get-Content .\package.ini -Raw) -replace '\${ver}', '${{ github.ref_name }}' | Set-Content .\package.ini
+          [Regex]::new('\${ver}').Replace((Get-Content .\Tooltip.aul2 -Raw), '${{ github.ref_name }}', 2) | Set-Content .\Tooltip.aul2
 
-    - name: Pack into a folder
-      run: |
-        mkdir pack\Plugin\${{ env.SOLUTION_NAME }}
-        copy ${{ matrix.configuration }}\*.aux2 pack\Plugin
-        copy *.md pack\Plugin\${{ env.SOLUTION_NAME }}
-        copy LICENSE pack\Plugin\${{ env.SOLUTION_NAME }}
-        copy assets\package.txt pack
-        copy assets\package.ini pack
-      # pick up and add any files you may need.
+      - name: Pack into a folder
+        run: |
+          mkdir pack\Plugin\${{ env.SOLUTION_NAME }}
+          copy ${{ matrix.configuration }}\*.aux2 pack\Plugin
+          copy *.md pack\Plugin\${{ env.SOLUTION_NAME }}
+          copy LICENSE pack\Plugin\${{ env.SOLUTION_NAME }}
+          mkdir pack\Language
+          copy assets\Tooltip.aul2 pack\Language\Default.${{ env.SOLUTION_NAME }}.aul2
+          copy assets\package.txt pack
+          copy assets\package.ini pack
+        # pick up and add any files you may need.
 
-    - name: Upload the build as artifacts
-      uses: actions/upload-artifact@v7
-      with:
-        path: pack/*
-        name: ${{ env.SOLUTION_NAME }}-${{ github.ref_name }}_${{ matrix.platform }}${{ matrix.configuration }}
-      # name can be anything as long as you can recognize.
+      - name: Upload the build as artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          path: pack/*
+          name: ${{ env.SOLUTION_NAME }}-${{ github.ref_name }}_${{ matrix.platform }}${{ matrix.configuration }}
+        # name can be anything as long as you can recognize.
 
   release:
     name: Create Release
@@ -71,38 +74,37 @@ jobs:
       contents: write
 
     steps:
-    - uses: actions/download-artifact@v8
-      with:
-        path: artifacts
-        merge-multiple: true # assuming a single artifact.
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          merge-multiple: true # assuming a single artifact.
 
-    - name: Compress
-      run: |
-        cd artifacts
-        zip -r ../aviutl2_${{ env.SOLUTION_NAME }}-${{ github.ref_name }}.au2pkg.zip *
-      # rename .zip file for downloading if necessary.
+      - name: Compress
+        run: |
+          cd artifacts
+          zip -r ../aviutl2_${{ env.SOLUTION_NAME }}-${{ github.ref_name }}.au2pkg.zip *
+        # rename .zip file for downloading if necessary.
 
-    - name: Prepare release notes
-      id: release-notes
-      run: |
-        echo "name=${{ github.ref_name }} ($(TZ='${{ env.TIME_ZONE }}' date +'%Y-%m-%d'))" >> $GITHUB_OUTPUT
-        echo "### 更新内容" >> ReleaseNotes.txt
-        phase=0
-        IFS=$'\n'
-        cat artifacts/Plugin/${{ env.SOLUTION_NAME }}/README.md | while read line; do
-          if [[ $phase == 0 ]]; then
-            if [[ $line =~ ^##*[[:space:]]{1,}'改版履歴'[[:space:]]*$ ]]; then phase=1; fi
-          elif [[ $phase == 1 ]]; then
-            if [[ $line =~ ^-[[:space:]] ]]; then phase=2; fi
-          elif [[ $line =~ ^(-|##*)[[:space:]] ]]; then break
-          else
-            echo ${line:2} >> ReleaseNotes.txt
-          fi
-        done
+      - name: Prepare release notes
+        id: release-notes
+        run: |
+          echo "name=${{ github.ref_name }} ($(TZ='${{ env.TIME_ZONE }}' date +'%Y-%m-%d'))" >> $GITHUB_OUTPUT
+          echo "### 更新内容" >> ReleaseNotes.txt
+          phase=0
+          while IFS= read -r line; do
+            if [[ $phase == 0 ]]; then
+              if [[ $line =~ ^##*[[:space:]]{1,}'改版履歴'[[:space:]]*$ ]]; then phase=1; fi
+            elif [[ $phase == 1 ]]; then
+              if [[ $line =~ ^-[[:space:]] ]]; then phase=2; fi
+            elif [[ $line =~ ^(-|##*)[[:space:]] ]]; then break
+            else
+              printf '%s\n' "${line:2}" >> ReleaseNotes.txt
+            fi
+          done < artifacts/Plugin/${{ env.SOLUTION_NAME }}/README.md
 
-    - name: Release
-      uses: softprops/action-gh-release@v3
-      with:
-        name: ${{ steps.release-notes.outputs.name }}
-        files: '*.zip'
-        body_path: ReleaseNotes.txt
+      - name: Release
+        uses: softprops/action-gh-release@v3
+        with:
+          name: ${{ steps.release-notes.outputs.name }}
+          files: '*.zip'
+          body_path: ReleaseNotes.txt
