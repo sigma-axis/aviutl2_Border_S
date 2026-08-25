@@ -88,6 +88,12 @@ namespace params
 	FILTER_ITEM_SELECT pattern_origin{ L"pattern::基準位置", pattern_origins::shape, const_cast<FILTER_ITEM_SELECT::ITEM*>(pattern_origins::items) };
 	FILTER_ITEM_CHECK_SECTION pattern_snap_to_pixel{ L"pattern::補間なし", true, false };
 
+	FILTER_ITEM_GROUP group_inner_settings{ L"内側縁取りの設定", false };
+	FILTER_ITEM_CHECK_SECTION inner_extend_left{ L"inner::左端を延伸", false, false };
+	FILTER_ITEM_CHECK_SECTION inner_extend_right{ L"inner::右端を延伸", false, false };
+	FILTER_ITEM_CHECK_SECTION inner_extend_top{ L"inner::上端を延伸", false, false };
+	FILTER_ITEM_CHECK_SECTION inner_extend_bottom{ L"inner::下端を延伸", false, false };
+
 	FILTER_ITEM_GROUP group_others{ L"その他", false };
 	FILTER_ITEM_TRACK aspect{ L"縦横比", 0.000, -100.000, +100.000, 0.001 };
 	FILTER_ITEM_TRACK pos_radius{ L"凸半径", 0.00, 0.00, 500.00, 0.01, nullptr, 0.4 };
@@ -124,6 +130,12 @@ namespace params
 		&pattern_origin,
 		&pattern_snap_to_pixel,
 
+		&group_inner_settings,
+		&inner_extend_left,
+		&inner_extend_right,
+		&inner_extend_top,
+		&inner_extend_bottom,
+
 		&group_others,
 		&aspect,
 		&pos_radius,
@@ -144,7 +156,9 @@ bool filter_core(
 	double move_x, double move_y,
 	double alpha_border, double alpha_source,
 	params::methods::id method, double a_param,
-	color_float const& color, params::directions::id direction, params::blur_spec::id blur_type,
+	color_float const& color, params::directions::id direction,
+	bool extend_left, bool extend_top, bool extend_right, bool extend_bottom,
+	params::blur_spec::id blur_type,
 	common::pattern_info&& pattern,
 	FILTER_PROC_VIDEO* video)
 {
@@ -152,6 +166,7 @@ bool filter_core(
 
 	// determine the input and output dimensions.
 	int const width_src = video->object->width, height_src = video->object->height;
+	int ext_lr = 0, ext_tb = 0;
 	int size_li, size_ti, size_ri, size_bi;
 	switch (direction) {
 	case params::directions::outer: default:
@@ -165,6 +180,15 @@ bool filter_core(
 	case params::directions::inner:
 	case params::directions::inner_invert:
 	{
+		if (extend_left || extend_right) {
+			ext_lr = std::max(4 + static_cast<int>(std::ceil(aspect_x * size)), 0);
+			D3D::clamp_extension_2d(ext_lr, width_src);
+		}
+		if (extend_top || extend_bottom) {
+			ext_tb = std::max(4 + static_cast<int>(std::ceil(aspect_y * size)), 0);
+			D3D::clamp_extension_2d(ext_tb, height_src);
+		}
+
 		auto const bx = (size >= 0 ? 1 : -1) * aspect_x * blur, by = (size >= 0 ? 1 : -1) * aspect_y * blur;
 		size_li = static_cast<int>(std::ceil(2 * bx)) + static_cast<int>(std::ceil(-aspect_x * size - move_x));
 		size_ti = static_cast<int>(std::ceil(2 * by)) + static_cast<int>(std::ceil(-aspect_y * size - move_y));
@@ -173,8 +197,8 @@ bool filter_core(
 		break;
 	}
 	}
-	D3D::clamp_extension_2d(size_li, size_ri, width_src);
-	D3D::clamp_extension_2d(size_ti, size_bi, height_src);
+	D3D::clamp_extension_2d(size_li, size_ri, width_src + 2 * ext_lr);
+	D3D::clamp_extension_2d(size_ti, size_bi, height_src + 2 * ext_tb);
 	int const width_dst = width_src + size_li + size_ri, height_dst = height_src + size_ti + size_bi;
 
 	// determine inflation/deflation sequence.
@@ -210,6 +234,26 @@ bool filter_core(
 		video->set_image_data(nullptr, width_dst, height_dst);
 		obj = video->get_image_texture2d();
 	}
+	else if (extend_left || extend_top || extend_right || extend_bottom) {
+		src_obj = D3D::create_texture(::DXGI_FORMAT_R32_FLOAT,
+			width_src + 2 * ext_lr, height_src + 2 * ext_tb);
+		if (src_obj == nullptr) return false;
+
+		// move the image before inflation/deflation operations.
+		int const
+			move_xi = (extend_left || extend_right) ? std::lround(move_x) : 0,
+			move_yi = (extend_top || extend_bottom) ? std::lround(move_y) : 0;
+		move_x -= move_xi; move_y -= move_yi;
+		size_li += move_xi; size_ri -= move_xi;
+		size_ti += move_yi; size_bi -= move_yi;
+		if (!image_ops::extract_alpha_clamp(
+			width_src, height_src, 0, 0,
+			D3D::to_shader_resource_view(obj).Get(),
+			width_src + 2 * ext_lr, height_src + 2 * ext_tb,
+			ext_lr + move_xi, ext_tb + move_yi,
+			D3D::to_unordered_access_view(src_obj.Get()).Get(),
+			extend_left, extend_top, extend_right, extend_bottom)) return false;
+	}
 
 	// prepare views.
 	auto srv_src_obj = D3D::to_shader_resource_view(src_obj.Get());
@@ -219,8 +263,10 @@ bool filter_core(
 
 	// apply the sequence of inflation/deflation.
 	auto srv_shape = common::sequential_inf_def(
-		width_src, height_src, width_dst, height_dst, size_li + move_x, size_ti + move_y,
-		srv_src_obj.Get(), false,
+		width_src + 2 * ext_lr, height_src + 2 * ext_tb,
+		width_dst + 2 * ext_lr, height_dst + 2 * ext_tb,
+		size_li + move_x, size_ti + move_y,
+		srv_src_obj.Get(), extend_left || extend_top || extend_right || extend_bottom,
 		inf_def_seq, inf_def_num, blur, blur_type,
 		aspect_x, aspect_y, superellipse_exp,
 		method, a_param);
@@ -268,9 +314,9 @@ bool filter_core(
 	case params::directions::inner_invert:
 	{
 		if (!image_ops::recolor(
-			width_dst, height_dst,
+			width_dst + 2 * ext_lr, height_dst + 2 * ext_tb,
 			width_src, height_src,
-			-size_li, -size_ti,
+			-size_li - ext_lr, -size_ti - ext_tb,
 			srv_shape.Get(), uav_obj.Get(),
 			pat_ops, direction == params::directions::inner,
 			alpha_border, alpha_source)) return false;
@@ -317,6 +363,9 @@ bool filter(FILTER_PROC_VIDEO* video)
 	auto const pattern_file = params::pattern_file.value;
 	auto const pattern_origin = params::pattern_origins::clamp(params::pattern_origin.value);
 	auto const snap_to_pixel = params::pattern_snap_to_pixel.value;
+	auto const
+		extend_left = params::inner_extend_left.value, extend_right = params::inner_extend_right.value,
+		extend_top = params::inner_extend_top.value, extend_bottom = params::inner_extend_bottom.value;
 
 	// further calculations.
 	double const
@@ -353,7 +402,12 @@ bool filter(FILTER_PROC_VIDEO* video)
 		move_x, move_y,
 		alpha_border, alpha_source,
 		method, a_param,
-		color, direction, blur_type,
+		color, direction,
+		direction != params::directions::outer && extend_left,
+		direction != params::directions::outer && extend_top,
+		direction != params::directions::outer && extend_right,
+		direction != params::directions::outer && extend_bottom,
+		blur_type,
 		{
 			pattern_type, pattern_file,
 			pattern_scale, pattern_rotate, pattern_x, pattern_y,

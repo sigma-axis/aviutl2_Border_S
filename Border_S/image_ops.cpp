@@ -82,6 +82,37 @@ struct cs_cbuff_extract_alpha {
 };
 static_assert(sizeof(cs_cbuff_extract_alpha) % 16 == 0);
 
+constexpr char cs_src_extract_alpha_clamp[] = R"(
+RWTexture2D<float> dst : register(u0);
+Texture2D<half4> src : register(t0);
+cbuffer constant0 : register(b0) {
+	uint2 size_src;
+	uint2 size_dst;
+	int2 ofs_src;
+	int2 ofs_dst;
+	bool4 clamp_ltrb;
+};
+[numthreads(8, 8, 1)]
+void csmain(uint2 id : SV_DispatchThreadID)
+{
+	if (any(id >= size_dst)) return;
+	const int2 lbd = clamp_ltrb.xy ? ofs_dst : 0,
+		ubd = clamp_ltrb.zw ? size_src - 1 + ofs_dst : size_dst;
+	dst[id] = saturate(src.Load(int3(clamp(int2(id), lbd, ubd) - ofs_dst + ofs_src, 0)).a);
+}
+)";
+struct cs_cbuff_extract_alpha_clamp {
+	uint32_t size_src_x, size_src_y;
+	uint32_t size_dst_x, size_dst_y;
+	int32_t ofs_src_x, ofs_src_y;
+	int32_t ofs_dst_x, ofs_dst_y;
+	bool clamp_left; uint8_t _pad1[3];
+	bool clamp_top; uint8_t _pad2[3];
+	bool clamp_right; uint8_t _pad3[3];
+	bool clamp_bottom; uint8_t _pad4[3];
+};
+static_assert(sizeof(cs_cbuff_extract_alpha_clamp) % 16 == 0);
+
 constexpr char cs_src_draw[] = R"(
 RWTexture2D<half4> dst : register(u0);
 Texture2D<half4> src : register(t0);
@@ -707,7 +738,7 @@ static_assert(sizeof(cs_cbuff_delta_move) % 16 == 0);
 // Resource managements.
 ////////////////////////////////
 constinit AviUtl2::finalizing::helpers::init_state init_state{};
-D3D::ComPtr<::ID3D11ComputeShader> cs_extract_alpha,
+D3D::ComPtr<::ID3D11ComputeShader> cs_extract_alpha, cs_extract_alpha_clamp,
 	cs_draw, cs_draw_pat, cs_recolor, cs_recolor_pat, cs_recolor_empty, cs_recolor_empty_pat,
 	cs_carve, cs_carve_1, cs_combine, cs_combine_pat,
 	cs_blur_x1, cs_blur_x2, cs_blur_y1, cs_blur_y2,
@@ -715,6 +746,7 @@ D3D::ComPtr<::ID3D11ComputeShader> cs_extract_alpha,
 void quit()
 {
 	cs_extract_alpha.Reset();
+	cs_extract_alpha_clamp.Reset();
 	cs_draw.Reset();
 	cs_draw_pat.Reset();
 	cs_recolor.Reset();
@@ -743,6 +775,7 @@ bool init()
 
 		#define cs_src(name)	cs_src_##name, "image_ops::cs_" #name
 			(cs_extract_alpha = D3D::create_compute_shader(cs_src(extract_alpha))) != nullptr &&
+			(cs_extract_alpha_clamp = D3D::create_compute_shader(cs_src(extract_alpha_clamp))) != nullptr &&
 			(cs_draw = D3D::create_compute_shader(cs_src(draw))) != nullptr &&
 			(cs_draw_pat = D3D::create_compute_shader(cs_src(draw_pat))) != nullptr &&
 			(cs_recolor = D3D::create_compute_shader(cs_src(recolor))) != nullptr &&
@@ -795,6 +828,38 @@ bool ops::extract_alpha(
 	D3D::cxt->Dispatch(
 		(width + ((1 << 3) - 1)) >> 3,
 		(height + ((1 << 3) - 1)) >> 3, 1);
+
+	// cleanup.
+	D3D::cxt->ClearState();
+
+	return true;
+}
+
+bool ops::extract_alpha_clamp(
+	int src_width, int src_height, int src_left, int src_top, ::ID3D11ShaderResourceView* src,
+	int dst_width, int dst_height, int dst_left, int dst_top, ::ID3D11UnorderedAccessView* dst,
+	bool clamp_left, bool clamp_top, bool clamp_right, bool clamp_bottom)
+{
+	if (!init()) return false;
+
+	// create constant buffer.
+	auto cbuff = D3D::create_const_buffer(cs_cbuff_extract_alpha_clamp{
+		.size_src_x = static_cast<uint32_t>(src_width), .size_src_y = static_cast<uint32_t>(src_height),
+		.size_dst_x = static_cast<uint32_t>(dst_width), .size_dst_y = static_cast<uint32_t>(dst_height),
+		.ofs_src_x = src_left, .ofs_src_y = src_top,
+		.ofs_dst_x = dst_left, .ofs_dst_y = dst_top,
+		.clamp_left = clamp_left, .clamp_top = clamp_top, .clamp_right = clamp_right, .clamp_bottom = clamp_bottom,
+	});
+	if (cbuff == nullptr) return false;
+
+	// execute shader.
+	D3D::cxt->CSSetShader(cs_extract_alpha_clamp.Get(), nullptr, 0);
+	D3D::cxt->CSSetShaderResources(0, 1, &src);
+	D3D::cxt->CSSetUnorderedAccessViews(0, 1, &dst, nullptr);
+	D3D::cxt->CSSetConstantBuffers(0, 1, cbuff.GetAddressOf());
+	D3D::cxt->Dispatch(
+		(dst_width + ((1 << 3) - 1)) >> 3,
+		(dst_height + ((1 << 3) - 1)) >> 3, 1);
 
 	// cleanup.
 	D3D::cxt->ClearState();

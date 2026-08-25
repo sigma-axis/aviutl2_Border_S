@@ -85,6 +85,29 @@ namespace Border_S::image_ops
 			int src_left, int src_top, ::ID3D11ShaderResourceView* src,
 			int dst_left, int dst_top, ::ID3D11UnorderedAccessView* dst);
 		/**
+		* @brief Extracts the alpha channel from a region of a source shader resource view and writes it into a destination unordered access view,
+				 optionally clamping the coordinates beyond left, top, right and bottom of the source bounding box.
+		* @param src_width Width of the region to extract, in pixels.
+		* @param src_height Height of the region to extract, in pixels.
+		* @param src_left Left (x) coordinate of the region in the source resource, in pixels.
+		* @param src_top Top (y) coordinate of the region in the source resource, in pixels.
+		* @param src Pointer to the source ID3D11ShaderResourceView containing the input image (must be a valid view).
+		* @param dst_width Width of the region in the destination resource where alpha values will be written, in pixels.
+		* @param dst_height Height of the region in the destination resource where alpha values will be written, in pixels.
+		* @param dst_left Left (x) coordinate of the region in the destination resource where alpha values will be written, in pixels.
+		* @param dst_top Top (y) coordinate of the region in the destination resource where alpha values will be written, in pixels.
+		* @param dst Pointer to the destination ID3D11UnorderedAccessView that will receive the extracted alpha data (must be a valid view).
+		* @param clamp_left If true, coordinates less than src_left will be clamped to src_left; otherwise, filled with zero (transparent).
+		* @param clamp_top If true, coordinates less than src_top will be clamped to src_top; otherwise, filled with zero (transparent).
+		* @param clamp_right If true, coordinates greater than src_left + src_width will be clamped to src_left + src_width; otherwise, filled with zero (transparent).
+		* @param clamp_bottom If true, coordinates greater than src_top + src_height will be clamped to src_top + src_height; otherwise, filled with zero (transparent).
+		* @returns true if the extraction and write operation succeeded; false otherwise.
+		*/
+		static bool extract_alpha_clamp(
+			int src_width, int src_height, int src_left, int src_top, ::ID3D11ShaderResourceView* src,
+			int dst_width, int dst_height, int dst_left, int dst_top, ::ID3D11UnorderedAccessView* dst,
+			bool clamp_left, bool clamp_top, bool clamp_right, bool clamp_bottom);
+		/**
 		* @brief Draws an image and a shape onto a destination texture with specified color or pattern.
 		* @param width_src Width of the source image texture in pixels.
 		* @param height_src Height of the source image texture in pixels.
