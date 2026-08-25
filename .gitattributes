@@ -4,6 +4,7 @@
 * text=auto
 
 *.txt text eol=crlf working-tree-encoding=utf8
+*.aul2 text eol=lf linguist-language=ini working-tree-encoding=utf8
 
 ###############################################################################
 # Set default behavior for command prompt diff.
