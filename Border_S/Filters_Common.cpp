@@ -171,7 +171,7 @@ bool common::add_size(int diff_size_l, int diff_size_t, int diff_size_r, int dif
 	auto rtv_obj = D3D::to_render_target_view(obj);
 	if (rtv_obj == nullptr) return false;
 	D3D::cxt->ClearRenderTargetView(rtv_obj.Get(), D3D::zero_color);
-	::D3D11_BOX const box{
+	::D3D11_BOX const box = {
 		.left = static_cast<uint32_t>(std::max(-diff_size_l, 0)),
 		.top = static_cast<uint32_t>(std::max(-diff_size_t, 0)),
 		.front = 0,
@@ -265,8 +265,8 @@ D3D::ComPtr<::ID3D11ShaderResourceView> common::sequential_inf_def(
 			.left = static_cast<uint32_t>(std::max(-ofs_x, 0)),
 			.top = static_cast<uint32_t>(std::max(-ofs_y, 0)),
 			.front = 0,
-			.right = static_cast<uint32_t>(std::min(width_src, width_dst - ofs_x)),
-			.bottom = static_cast<uint32_t>(std::min(height_src, height_dst - ofs_y)),
+			.right = static_cast<uint32_t>(std::min(-ofs_x + width_src, width_max)),
+			.bottom = static_cast<uint32_t>(std::min(-ofs_y + height_src, height_max)),
 			.back = 1,
 		};
 		D3D::cxt->CopySubresourceRegion(shapes[0].Get(), 0,
