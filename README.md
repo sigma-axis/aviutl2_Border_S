@@ -142,7 +142,7 @@ Although, usage documentations for this script / plugin in languages other than 
 | `内側縁取り` | 内側縁取り． |
 | `内側塗りつぶし` | 内側縁取りよりも更に内側を塗りつぶし． |
 
-TODO: image.
+![縁取りの3つのタイプの例](https://github.com/user-attachments/assets/9b8b8d6d-c59c-4035-826f-d1528722aca2)
 
 初期値は `外側縁取り`.
 
@@ -224,7 +224,7 @@ TODO: image.
 
 オブジェクトの上下左右それぞれの端に不透明ピクセルがある場合，それがオブジェクトの外側にも続いているような縁取り形状にするかどうかを指定します．
 
-TODO: image.
+![端を延伸が ON と OFF の場合の比較](https://github.com/user-attachments/assets/b19670dd-3e76-43ec-b734-fd6fefd98fc1)
 
 初期値は全て OFF.
 
