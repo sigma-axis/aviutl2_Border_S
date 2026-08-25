@@ -47,7 +47,7 @@ void csmain(uint2 id : SV_DispatchThreadID)
 {
 	if ((id >= uint2(size_mid)).x) return;
 
-	uint dist = alpha_base > 0 ? 0 : 1 << 29;
+	uint dist = alpha_base > 0 ? 1 : 1 << 29;
 	[branch] if (id.y == 0) {
 		for (int y = min(0, range_src_y[0]); y < size_mid.y; y++, dist++) {
 			const float alpha = (range_src_y[0] <= y && y < range_src_y[1]) ?
