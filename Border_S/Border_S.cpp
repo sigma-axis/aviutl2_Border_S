@@ -58,11 +58,11 @@ extern "C" __declspec(dllexport) bool InitializePlugin(DWORD version)
 {
 	if (version >= AviUtl2::least_aviutl2_ver_num) return true;
 
-	AviUtl2::logging::error(L"Requires AviUtl ExEdit2 " LEAST_AVIUTL2_VER_STR L" or later!");
+	AviUtl2::logging::error(L"Requires AviUtl ExEdit2 version " LEAST_AVIUTL2_VER_STR L" or later!");
 	::MessageBoxW(nullptr,
-		PLUGIN_NAME L" は AviUtl ExEdit2 " LEAST_AVIUTL2_VER_STR L" 以降のバージョンが必要です！ "
+		PLUGIN_NAME L" は AviUtl ExEdit2 version " LEAST_AVIUTL2_VER_STR L" 以降のバージョンが必要です！ "
 		L"AviUtl2 の最新版を確認してください．\n"
-		PLUGIN_NAME L" requires AviUtl ExEdit2 " LEAST_AVIUTL2_VER_STR L" or later! "
+		PLUGIN_NAME L" requires AviUtl ExEdit2 version " LEAST_AVIUTL2_VER_STR L" or later! "
 		L"Make sure your AviUtl2 is the latest.",
 		PLUGIN_NAME, MB_OK | MB_ICONERROR);
 	return false;
