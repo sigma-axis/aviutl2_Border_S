@@ -86,30 +86,21 @@ constexpr char cs_src_extract_alpha_clamp[] = R"(
 RWTexture2D<float> dst : register(u0);
 Texture2D<half4> src : register(t0);
 cbuffer constant0 : register(b0) {
-	uint2 size_src;
 	uint2 size_dst;
-	int2 ofs_src;
-	int2 ofs_dst;
-	bool4 clamp_ltrb;
+	int2 offset;
+	int4 bounds;
 };
 [numthreads(8, 8, 1)]
 void csmain(uint2 id : SV_DispatchThreadID)
 {
 	if (any(id >= size_dst)) return;
-	const int2 lbd = clamp_ltrb.xy ? ofs_dst : 0,
-		ubd = clamp_ltrb.zw ? size_src - 1 + ofs_dst : size_dst;
-	dst[id] = saturate(src.Load(int3(clamp(int2(id), lbd, ubd) - ofs_dst + ofs_src, 0)).a);
+	dst[id] = saturate(src.Load(int3(clamp(int2(id), bounds.xy, bounds.zw) + offset, 0)).a);
 }
 )";
 struct cs_cbuff_extract_alpha_clamp {
-	uint32_t size_src_x, size_src_y;
 	uint32_t size_dst_x, size_dst_y;
-	int32_t ofs_src_x, ofs_src_y;
-	int32_t ofs_dst_x, ofs_dst_y;
-	bool clamp_left; uint8_t _pad1[3];
-	bool clamp_top; uint8_t _pad2[3];
-	bool clamp_right; uint8_t _pad3[3];
-	bool clamp_bottom; uint8_t _pad4[3];
+	int32_t offset_x, offset_y;
+	int32_t bound_left, bound_top, bound_right, bound_bottom;
 };
 static_assert(sizeof(cs_cbuff_extract_alpha_clamp) % 16 == 0);
 
@@ -844,11 +835,12 @@ bool ops::extract_alpha_clamp(
 
 	// create constant buffer.
 	auto cbuff = D3D::create_const_buffer(cs_cbuff_extract_alpha_clamp{
-		.size_src_x = static_cast<uint32_t>(src_width), .size_src_y = static_cast<uint32_t>(src_height),
 		.size_dst_x = static_cast<uint32_t>(dst_width), .size_dst_y = static_cast<uint32_t>(dst_height),
-		.ofs_src_x = src_left, .ofs_src_y = src_top,
-		.ofs_dst_x = dst_left, .ofs_dst_y = dst_top,
-		.clamp_left = clamp_left, .clamp_top = clamp_top, .clamp_right = clamp_right, .clamp_bottom = clamp_bottom,
+		.offset_x = src_left - dst_left, .offset_y = src_top - dst_top,
+		.bound_left = clamp_left ? dst_left : 0,
+		.bound_top = clamp_top ? dst_top : 0,
+		.bound_right = clamp_right ? src_width - 1 + dst_left : dst_width - 1,
+		.bound_bottom = clamp_bottom ? src_height - 1 + dst_top : dst_height - 1,
 	});
 	if (cbuff == nullptr) return false;
 
