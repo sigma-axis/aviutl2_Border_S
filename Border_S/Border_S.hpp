@@ -22,9 +22,9 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 #define PLUGIN_INFO_FMT(name, ver, author)	(name " " ver " by " author)
 #define FILTER_LABEL_FMT(label)				(PLUGIN_NAME "\\" label)
 
-#define LEAST_AVIUTL2_VER_STR	"2.0.54"
+#define LEAST_AVIUTL2_VER_STR	"2.1.7"
 
 namespace AviUtl2
 {
-	constexpr uint32_t least_aviutl2_ver_num = 2005400;
+	constexpr uint32_t least_aviutl2_ver_num = 2010700;
 }
