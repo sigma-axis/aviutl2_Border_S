@@ -59,6 +59,10 @@ namespace params
 		};
 	};
 	FILTER_ITEM_SELECT direction{ L"タイプ", directions::outer, const_cast<FILTER_ITEM_SELECT::ITEM*>(directions::items) };
+	FILTER_ITEM_CHECK_SECTION inner_extend_left{ L"inner::左端を延伸", false, false };
+	FILTER_ITEM_CHECK_SECTION inner_extend_right{ L"inner::右端を延伸", false, false };
+	FILTER_ITEM_CHECK_SECTION inner_extend_top{ L"inner::上端を延伸", false, false };
+	FILTER_ITEM_CHECK_SECTION inner_extend_bottom{ L"inner::下端を延伸", false, false };
 
 	FILTER_ITEM_GROUP group_alpha{ L"透明度設定", false };
 	FILTER_ITEM_TRACK alpha_border{ L"透明度", 0.00, 0.00, 100.00, 0.01 };
@@ -88,12 +92,6 @@ namespace params
 	FILTER_ITEM_SELECT pattern_origin{ L"pattern::基準位置", pattern_origins::shape, const_cast<FILTER_ITEM_SELECT::ITEM*>(pattern_origins::items) };
 	FILTER_ITEM_CHECK_SECTION pattern_snap_to_pixel{ L"pattern::補間なし", true, false };
 
-	FILTER_ITEM_GROUP group_inner_settings{ L"内側縁取りの設定", false };
-	FILTER_ITEM_CHECK_SECTION inner_extend_left{ L"inner::左端を延伸", false, false };
-	FILTER_ITEM_CHECK_SECTION inner_extend_right{ L"inner::右端を延伸", false, false };
-	FILTER_ITEM_CHECK_SECTION inner_extend_top{ L"inner::上端を延伸", false, false };
-	FILTER_ITEM_CHECK_SECTION inner_extend_bottom{ L"inner::下端を延伸", false, false };
-
 	FILTER_ITEM_GROUP group_others{ L"その他", false };
 	FILTER_ITEM_TRACK aspect{ L"縦横比", 0.000, -100.000, +100.000, 0.001 };
 	FILTER_ITEM_TRACK pos_radius{ L"凸半径", 0.00, 0.00, 500.00, 0.01, nullptr, 0.4 };
@@ -102,6 +100,24 @@ namespace params
 	using blur_spec = common::blur;
 	FILTER_ITEM_SELECT blur_type { L"ぼかしの種類", blur_spec::triangular, const_cast<FILTER_ITEM_SELECT::ITEM*>(common::blur::items) };
 
+	// hide rules.
+	namespace hide_rules
+	{
+		FILTER_ITEM_HIDE_RULE hide_a_param{ a_param.name, method.name, FILTER_ITEM_HIDE_RULE::OPERATOR::EQUAL, methods::max };
+		FILTER_ITEM_HIDE_RULE hide_color{ color.name, pattern_type.name, FILTER_ITEM_HIDE_RULE::OPERATOR::NOT_EQUAL, pattern_types::none };
+		FILTER_ITEM_HIDE_RULE hide_pattern_file{ pattern_file.name, pattern_type.name, FILTER_ITEM_HIDE_RULE::OPERATOR::NOT_EQUAL, pattern_types::image };
+		FILTER_ITEM_HIDE_RULE hide_pattern_x{ pattern_x.name, pattern_type.name, FILTER_ITEM_HIDE_RULE::OPERATOR::EQUAL, pattern_types::none };
+		FILTER_ITEM_HIDE_RULE hide_pattern_y{ pattern_y.name, pattern_type.name, FILTER_ITEM_HIDE_RULE::OPERATOR::EQUAL, pattern_types::none };
+		FILTER_ITEM_HIDE_RULE hide_pattern_scale{ pattern_scale.name, pattern_type.name, FILTER_ITEM_HIDE_RULE::OPERATOR::EQUAL, pattern_types::none };
+		FILTER_ITEM_HIDE_RULE hide_pattern_rotate{ pattern_rotate.name, pattern_type.name, FILTER_ITEM_HIDE_RULE::OPERATOR::EQUAL, pattern_types::none };
+		FILTER_ITEM_HIDE_RULE hide_pattern_origin{ pattern_origin.name, pattern_type.name, FILTER_ITEM_HIDE_RULE::OPERATOR::EQUAL, pattern_types::none };
+		FILTER_ITEM_HIDE_RULE hide_pattern_snap_to_pixel{ pattern_snap_to_pixel.name, pattern_type.name, FILTER_ITEM_HIDE_RULE::OPERATOR::EQUAL, pattern_types::none };
+		FILTER_ITEM_HIDE_RULE hide_extend_left{ inner_extend_left.name, direction.name, FILTER_ITEM_HIDE_RULE::OPERATOR::EQUAL, directions::outer };
+		FILTER_ITEM_HIDE_RULE hide_extend_right{ inner_extend_right.name, direction.name, FILTER_ITEM_HIDE_RULE::OPERATOR::EQUAL, directions::outer };
+		FILTER_ITEM_HIDE_RULE hide_extend_top{ inner_extend_top.name, direction.name, FILTER_ITEM_HIDE_RULE::OPERATOR::EQUAL, directions::outer };
+		FILTER_ITEM_HIDE_RULE hide_extend_bottom{ inner_extend_bottom.name, direction.name, FILTER_ITEM_HIDE_RULE::OPERATOR::EQUAL, directions::outer };
+	}
+
 	constexpr void* all[] = {
 		&size,
 		&blur,
@@ -109,6 +125,11 @@ namespace params
 		&method,
 		&a_param,
 		&direction,
+
+		&inner_extend_left,
+		&inner_extend_right,
+		&inner_extend_top,
+		&inner_extend_bottom,
 
 		&group_alpha,
 		&alpha_border,
@@ -130,18 +151,26 @@ namespace params
 		&pattern_origin,
 		&pattern_snap_to_pixel,
 
-		&group_inner_settings,
-		&inner_extend_left,
-		&inner_extend_right,
-		&inner_extend_top,
-		&inner_extend_bottom,
-
 		&group_others,
 		&aspect,
 		&pos_radius,
 		&neg_radius,
 		&sup_ell_expo,
 		&blur_type,
+
+		&hide_rules::hide_a_param,
+		&hide_rules::hide_color,
+		&hide_rules::hide_pattern_file,
+		&hide_rules::hide_pattern_x,
+		&hide_rules::hide_pattern_y,
+		&hide_rules::hide_pattern_scale,
+		&hide_rules::hide_pattern_rotate,
+		&hide_rules::hide_pattern_origin,
+		&hide_rules::hide_pattern_snap_to_pixel,
+		&hide_rules::hide_extend_left,
+		&hide_rules::hide_extend_right,
+		&hide_rules::hide_extend_top,
+		&hide_rules::hide_extend_bottom,
 
 		nullptr,
 	};

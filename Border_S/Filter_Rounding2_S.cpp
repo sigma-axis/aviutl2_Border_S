@@ -53,6 +53,12 @@ namespace params
 	using blur_spec = common::blur;
 	FILTER_ITEM_SELECT blur_type{ L"ぼかしの種類", common::blur::triangular, const_cast<FILTER_ITEM_SELECT::ITEM*>(common::blur::items) };
 
+	// hide rules.
+	namespace hide_rules
+	{
+		FILTER_ITEM_HIDE_RULE hide_a_param{ a_param.name, method.name, FILTER_ITEM_HIDE_RULE::OPERATOR::EQUAL, methods::max };
+	}
+
 	constexpr void* all[] = {
 		&radius,
 		&blur,
@@ -68,6 +74,8 @@ namespace params
 		&aspect,
 		&sup_ell_expo,
 		&blur_type,
+
+		&hide_rules::hide_a_param,
 
 		nullptr,
 	};

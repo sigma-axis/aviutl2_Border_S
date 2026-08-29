@@ -113,6 +113,20 @@ namespace params
 	using blur_spec = common::blur;
 	FILTER_ITEM_SELECT blur_type{ L"ぼかしの種類", common::blur::triangular, const_cast<FILTER_ITEM_SELECT::ITEM*>(common::blur::items) };
 
+	// hide rules.
+	namespace hide_rules
+	{
+		FILTER_ITEM_HIDE_RULE hide_a_param{ a_param.name, method.name, FILTER_ITEM_HIDE_RULE::OPERATOR::EQUAL, methods::max };
+		FILTER_ITEM_HIDE_RULE hide_color{ color.name, pattern_type.name, FILTER_ITEM_HIDE_RULE::OPERATOR::NOT_EQUAL, pattern_types::none };
+		FILTER_ITEM_HIDE_RULE hide_pattern_file{ pattern_file.name, pattern_type.name, FILTER_ITEM_HIDE_RULE::OPERATOR::NOT_EQUAL, pattern_types::image };
+		FILTER_ITEM_HIDE_RULE hide_pattern_x{ pattern_x.name, pattern_type.name, FILTER_ITEM_HIDE_RULE::OPERATOR::EQUAL, pattern_types::none };
+		FILTER_ITEM_HIDE_RULE hide_pattern_y{ pattern_y.name, pattern_type.name, FILTER_ITEM_HIDE_RULE::OPERATOR::EQUAL, pattern_types::none };
+		FILTER_ITEM_HIDE_RULE hide_pattern_scale{ pattern_scale.name, pattern_type.name, FILTER_ITEM_HIDE_RULE::OPERATOR::EQUAL, pattern_types::none };
+		FILTER_ITEM_HIDE_RULE hide_pattern_rotate{ pattern_rotate.name, pattern_type.name, FILTER_ITEM_HIDE_RULE::OPERATOR::EQUAL, pattern_types::none };
+		FILTER_ITEM_HIDE_RULE hide_pattern_origin{ pattern_origin.name, pattern_type.name, FILTER_ITEM_HIDE_RULE::OPERATOR::EQUAL, pattern_types::none };
+		FILTER_ITEM_HIDE_RULE hide_pattern_snap_to_pixel{ pattern_snap_to_pixel.name, pattern_type.name, FILTER_ITEM_HIDE_RULE::OPERATOR::EQUAL, pattern_types::none };
+	}
+
 	constexpr void* all[] = {
 		&distance,
 		&line,
@@ -152,6 +166,16 @@ namespace params
 		&line_sup_ell_expo,
 		&direction,
 		&blur_type,
+
+		&hide_rules::hide_a_param,
+		&hide_rules::hide_color,
+		&hide_rules::hide_pattern_file,
+		&hide_rules::hide_pattern_x,
+		&hide_rules::hide_pattern_y,
+		&hide_rules::hide_pattern_scale,
+		&hide_rules::hide_pattern_rotate,
+		&hide_rules::hide_pattern_origin,
+		&hide_rules::hide_pattern_snap_to_pixel,
 
 		nullptr,
 	};
