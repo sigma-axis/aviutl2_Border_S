@@ -142,9 +142,19 @@ Although, usage documentations for this script / plugin in languages other than 
 | `内側縁取り` | 内側縁取り． |
 | `内側塗りつぶし` | 内側縁取りよりも更に内側を塗りつぶし． |
 
-![縁取りの3つのタイプの例](https://github.com/user-attachments/assets/9b8b8d6d-c59c-4035-826f-d1528722aca2)
+![縁取りの3つのタイプの例](https://github.com/user-attachments/assets/32863efd-e0ba-49d4-9abf-51b6612420db)
 
 初期値は `外側縁取り`.
+
+### 左端を延伸 / 右端を延伸 / 上端を延伸 / 下端を延伸
+
+[「タイプ」](#タイプ)で `内側縁取り` または `内側塗りつぶし` を選択した場合のみ有効な設定です．
+
+オブジェクトの上下左右それぞれの端に不透明ピクセルがある場合，それがオブジェクトの外側にも続いているような縁取り形状にするかどうかを指定します．
+
+![端を延伸が ON と OFF の場合の比較](https://github.com/user-attachments/assets/0b918697-e1a7-496b-91c3-26e6b7af0be2)
+
+初期値は全て OFF.
 
 ### 透明度
 
@@ -217,16 +227,6 @@ Although, usage documentations for this script / plugin in languages other than 
 - OFF だと双線形補間します．ぼやけた見え方になる傾向があります．
 
 初期値は ON.
-
-### 左端を延伸 / 右端を延伸 / 上端を延伸 / 下端を延伸
-
-[「タイプ」](#タイプ)で `内側縁取り` または `内側塗りつぶし` を選択した場合のみ有効な設定です．
-
-オブジェクトの上下左右それぞれの端に不透明ピクセルがある場合，それがオブジェクトの外側にも続いているような縁取り形状にするかどうかを指定します．
-
-![端を延伸が ON と OFF の場合の比較](https://github.com/user-attachments/assets/b19670dd-3e76-43ec-b734-fd6fefd98fc1)
-
-初期値は全て OFF.
 
 ### 縦横比
 
